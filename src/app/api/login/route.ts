@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-// Note: This is a simplified login for now. We will add password hashing later.
+import { compare } from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
@@ -16,12 +16,19 @@ export async function POST(request: Request) {
       where: eq(users.username, username),
     });
 
-    // In a real app, you would use a library like 'bcrypt' to compare hashed passwords.
-    if (!user || user.password !== password) {
+    // 2. Add a check to see if a user was found and if they have a password
+    if (!user || !user.password) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
-    // Don't send the password back to the client.
+    // 3. Securely compare the provided password with the stored hash
+    const passwordsMatch = await compare(password, user.password);
+
+    if (!passwordsMatch) {
+      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
+    }
+
+    // 4. Don't send the password back to the client
     const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json(userWithoutPassword);
 
