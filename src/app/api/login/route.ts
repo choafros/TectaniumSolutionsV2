@@ -1,8 +1,12 @@
+// Now uses JWT to create a session cookie
+
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { compare } from 'bcryptjs';
+import { sign } from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
@@ -16,21 +20,32 @@ export async function POST(request: Request) {
       where: eq(users.username, username),
     });
 
-    // 2. Add a check to see if a user was found and if they have a password
     if (!user || !user.password) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
-    // 3. Securely compare the provided password with the stored hash
     const passwordsMatch = await compare(password, user.password);
 
     if (!passwordsMatch) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
-    // 4. Don't send the password back to the client
-    const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json(userWithoutPassword);
+    // Create JWT payload
+    const payload = { userId: user.id, role: user.role };
+    const secret = process.env.JWT_SECRET!;
+
+    // Sign the token
+    const token = sign(payload, secret, { expiresIn: '7d' });
+
+    // Set the cookie
+    (await cookies()).set('session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      path: '/',
+    });
+
+    return NextResponse.json({ message: 'Login successful' });
 
   } catch (error) {
     console.error('Login error:', error);

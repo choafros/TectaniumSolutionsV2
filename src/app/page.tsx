@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
-import { ShieldCheck, CheckCircle, Wifi, Users } from 'lucide-react';
+import { ShieldCheck, Wifi, Users } from 'lucide-react';
 
 const features = [
   {
@@ -62,9 +62,6 @@ export default function HomePage() {
                   <Link href="/login">
                     <Button size="lg">Get Started</Button>
                   </Link>
-                  <Link href="#features">
-                    <Button variant="ghost" size="lg">Learn more <span aria-hidden="true">→</span></Button>
-                  </Link>
                 </div>
               </div>
             </div>
@@ -86,8 +83,8 @@ export default function HomePage() {
           </dl>
         </div>
 
-        {/* Client Logos Section */}
-        <div id="clients" className="mx-auto mt-32 max-w-7xl px-6 sm:mt-40 lg:px-8">
+        {/* Client Logos Section -- Added spacing here */}
+        <div id="clients" className="mx-auto mt-32 mb-32 max-w-7xl px-6 sm:mt-40 lg:px-8">
            <div className="mx-auto max-w-2xl lg:max-w-none">
             <h2 className="text-center text-lg font-semibold leading-8 text-gray-900">
               Trusted by the world’s most innovative companies
@@ -107,5 +104,3 @@ export default function HomePage() {
     </div>
   );
 }
-// This is the main page of the Tectanium Solutions website, showcasing the company's services and features.
-// It includes a hero section, features/services section, and client logos section, along with a header and footer.
