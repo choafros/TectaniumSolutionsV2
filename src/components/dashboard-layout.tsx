@@ -1,38 +1,37 @@
-"use client";
+"use client"; // This component uses hooks, so it must be a client component
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
-import { Home, Clock, FileText, FolderKanban, LogOut, UserCog, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Home, Clock, FolderKanban, FileText, Users, Settings, LogOut, FileBox } from 'lucide-react';
 
+// Define the navigation items
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['admin', 'candidate', 'client'] },
   { name: 'Timesheets', href: '/timesheets', icon: Clock, roles: ['admin', 'candidate'] },
   { name: 'Projects', href: '/projects', icon: FolderKanban, roles: ['admin', 'candidate'] },
-  { name: 'Invoices', href: '/invoices', icon: FileText, roles: ['admin', 'candidate'] },
+  { name: 'Invoices', href: '/invoices', icon: FileBox, roles: ['admin', 'candidate'] },
   { name: 'Documents', href: '/documents', icon: FileText, roles: ['admin', 'candidate'] },
 ];
 
 const adminNavItems = [
-    { name: 'Users', href: '/admin/users', icon: UserCog, roles: ['admin'] },
-    { name: 'Settings', href: '/admin/settings', icon: Settings, roles: ['admin'] },
+  { name: 'Users', href: '/admin/users', icon: Users, roles: ['admin'] },
+  { name: 'Settings', href: '/admin/settings', icon: Settings, roles: ['admin'] },
 ];
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
+  // Filter navigation items based on the current user's role
   const getNavItems = () => {
-    if (user?.role === 'admin') {
-        return [...navItems, ...adminNavItems];
-    }
-    return navItems.filter(item => item.roles.includes(user?.role || ''));
-  }
+    if (!user) return [];
+    const allItems = user.role === 'admin' ? [...navItems, ...adminNavItems] : navItems;
+    return allItems.filter(item => item.roles.includes(user.role));
+  };
+
+  const visibleNavItems = getNavItems();
 
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
@@ -45,7 +44,7 @@ export default function DashboardLayout({
           </div>
           <div className="flex-1 overflow-auto py-2">
             <nav className="grid items-start px-4 text-sm font-medium">
-              {getNavItems().map((item) => (
+              {visibleNavItems.map((item) => (
                 <Link
                   key={item.name}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50 ${
@@ -73,10 +72,10 @@ export default function DashboardLayout({
       <div className="flex flex-col">
         <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-100/40 px-6 dark:bg-gray-800/40">
           <div className="flex-1">
-            <h1 className="text-lg font-semibold capitalize">{pathname.split('/').pop()}</h1>
+            <h1 className="text-lg font-semibold capitalize">{pathname.split('/').pop()?.replace('-', ' ')}</h1>
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6 bg-gray-50">
           {children}
         </main>
       </div>
