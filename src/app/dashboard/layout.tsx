@@ -1,38 +1,17 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
-import { Home, Clock, FileText, FolderKanban, LogOut, UserCog, Settings } from 'lucide-react';
+import { DashboardNav } from '@/components/dashboard-nav'; // The new, reusable navigation component
 import { Button } from '@/components/ui/button';
-
-const navItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['admin', 'candidate', 'client'] },
-  { name: 'Timesheets', href: '/timesheets', icon: Clock, roles: ['admin', 'candidate'] },
-  { name: 'Projects', href: '/projects', icon: FolderKanban, roles: ['admin', 'candidate'] },
-  { name: 'Invoices', href: '/invoices', icon: FileText, roles: ['admin', 'candidate'] },
-  { name: 'Documents', href: '/documents', icon: FileText, roles: ['admin', 'candidate'] },
-];
-
-const adminNavItems = [
-    { name: 'Users', href: '/admin/users', icon: UserCog, roles: ['admin'] },
-    { name: 'Settings', href: '/admin/settings', icon: Settings, roles: ['admin'] },
-];
+import { LogOut, ShieldCheck } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const { user, logout } = useAuth();
-
-  const getNavItems = () => {
-    if (user?.role === 'admin') {
-        return [...navItems, ...adminNavItems];
-    }
-    return navItems.filter(item => item.roles.includes(user?.role || ''));
-  }
+  const { logout } = useAuth();
 
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
@@ -40,24 +19,13 @@ export default function DashboardLayout({
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-[60px] items-center border-b px-6">
             <Link className="flex items-center gap-2 font-semibold" href="/">
+              <ShieldCheck className="h-6 w-6" />
               <span className="">Tectanium</span>
             </Link>
           </div>
           <div className="flex-1 overflow-auto py-2">
-            <nav className="grid items-start px-4 text-sm font-medium">
-              {getNavItems().map((item) => (
-                <Link
-                  key={item.name}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50 ${
-                    pathname === item.href && 'bg-gray-200/50 text-gray-900 dark:bg-gray-800'
-                  }`}
-                  href={item.href}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
+            {/* The navigation logic is now neatly contained in this component */}
+            <DashboardNav />
           </div>
           <div className="mt-auto p-4 border-t">
             <div className="flex justify-between items-center text-xs text-gray-500 mb-4">
@@ -71,10 +39,8 @@ export default function DashboardLayout({
         </div>
       </div>
       <div className="flex flex-col">
-        <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-100/40 px-6 dark:bg-gray-800/40">
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold capitalize">{pathname.split('/').pop()}</h1>
-          </div>
+         <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-100/40 px-6 dark:bg-gray-800/40">
+          {/* This header can be customized per-page or made dynamic later */}
         </header>
         <main className="flex-1 p-4 md:p-6">
           {children}
