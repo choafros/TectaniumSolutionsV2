@@ -32,13 +32,16 @@ const statusUpdateSchema = z.object({
 });
 
 // PUT handler to update a timesheet (e.g., change status)
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+    request: Request, 
+    context: any
+) {
     const auth = await getAuthPayload();
     if (!auth) {
         return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }
 
-    const timesheetId = parseInt(params.id, 10);
+    const timesheetId = parseInt(context.params.id, 10);
     if (isNaN(timesheetId)) {
         return NextResponse.json({ message: 'Invalid timesheet ID' }, { status: 400 });
     }
@@ -83,13 +86,16 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 // DELETE handler to remove a timesheet
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+    request: Request, 
+    context: any
+) {
      const auth = await getAuthPayload();
     if (!auth) {
         return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }
 
-    const timesheetId = parseInt(params.id, 10);
+    const timesheetId = parseInt(context.params.id, 10);
      if (isNaN(timesheetId)) {
         return NextResponse.json({ message: 'Invalid timesheet ID' }, { status: 400 });
     }
