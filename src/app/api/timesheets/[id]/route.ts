@@ -1,8 +1,8 @@
 // src/app/api/timesheets/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/db';
-import { timesheets, users } from '@/lib/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { timesheets } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
@@ -27,33 +27,46 @@ async function getAuthPayload(): Promise<JwtPayload | null> {
     }
 }
 
-const statusUpdateSchema = z.object({
+const updateTimesheetSchema = z.object({
+    dailyHours: z.any(),
+    notes: z.string().optional(),
+    totalHours: z.string(),
     status: z.enum(["draft", "pending", "approved", "rejected", "invoiced"]),
 });
 
-// PUT handler to update a timesheet (e.g., change status)
+// PUT: update a timesheet
 export async function PUT(
     request: Request, 
-    context: any
+    context: { params: Promise<{ id: string }> }
 ) {
     const auth = await getAuthPayload();
-    if (!auth) {
-        return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+    // Only admins can use this powerful update
+    if (!auth || auth.role !== 'admin') {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    const timesheetId = parseInt(context.params.id, 10);
+    // Await the params promise before using it
+    const { id } = await context.params;
+    if (!id) {
+        return NextResponse.json({ message: 'Timesheet ID is required' }, { status: 400 });
+    }
+    // Parse the ID to an integer
+    const timesheetId = parseInt(id, 10);
+    
     if (isNaN(timesheetId)) {
         return NextResponse.json({ message: 'Invalid timesheet ID' }, { status: 400 });
     }
 
     try {
         const body = await request.json();
-        const validation = statusUpdateSchema.safeParse(body);
+        let validation = updateTimesheetSchema.safeParse(body);
+
         if (!validation.success) {
+            console.error("Zod validation failed:", validation.error.flatten());
             return NextResponse.json({ message: 'Invalid input', errors: validation.error.flatten().fieldErrors }, { status: 400 });
-        }
+        }        
+        const { dailyHours, notes, totalHours, status } = validation.data;
         
-        const { status } = validation.data;
 
         const targetTimesheet = await db.query.timesheets.findFirst({ where: eq(timesheets.id, timesheetId) });
 
@@ -70,7 +83,7 @@ export async function PUT(
         }
         
         const updatedTimesheet = await db.update(timesheets)
-            .set({ status })
+            .set({ status, dailyHours, notes, totalHours })
             .where(eq(timesheets.id, timesheetId))
             .returning();
 
@@ -85,17 +98,19 @@ export async function PUT(
     }
 }
 
-// DELETE handler to remove a timesheet
+// DELETE: remove a timesheet
 export async function DELETE(
     request: Request, 
-    context: any
+    context: { params: Promise<{ id: string }> }
 ) {
-     const auth = await getAuthPayload();
-    if (!auth) {
-        return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+    const auth = await getAuthPayload();
+    if (!auth || auth.role !== 'admin') {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    const timesheetId = parseInt(context.params.id, 10);
+    // Await the params promise before using it
+    const { id } = await context.params;
+    const timesheetId = parseInt(id, 10);
      if (isNaN(timesheetId)) {
         return NextResponse.json({ message: 'Invalid timesheet ID' }, { status: 400 });
     }

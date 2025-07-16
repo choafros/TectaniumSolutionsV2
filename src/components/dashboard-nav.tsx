@@ -9,10 +9,14 @@ import { cn } from '@/lib/utils';
 // Define all possible navigation items with the roles that can see them
 const allNavItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['admin', 'candidate', 'client'] },
-  { name: 'Timesheets', href: '/dashboard/timesheets', icon: Clock, roles: ['admin', 'candidate'] },
+  // Worker-specific timesheet link
+  { name: 'My Timesheets', href: '/dashboard/timesheets', icon: Clock, roles: ['candidate'] },
+  // Admin-specific links
+  { name: 'All Timesheets', href: '/dashboard/admin/timesheets', icon: Clock, roles: ['admin'] },
   { name: 'Projects', href: '/dashboard/projects', icon: FolderKanban, roles: ['admin'] },
-  { name: 'Documents', href: '/dashboard/documents', icon: FileText, roles: ['admin', 'candidate'] },
   { name: 'Manage Users', href: '/dashboard/admin/users', icon: Users, roles: ['admin'] },
+  // Common link for documents
+  { name: 'Documents', href: '/dashboard/documents', icon: FileText, roles: ['admin', 'candidate'] },
 ];
 
 export function DashboardNav() {

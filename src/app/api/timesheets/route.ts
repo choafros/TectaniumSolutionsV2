@@ -13,11 +13,29 @@ interface JwtPayload {
 }
 
 // Zod schema for creating a timesheet
+const dayEntrySchema = z.object({
+  start: z.string().optional(),
+  end:  z.string().optional(),
+  notes: z.string().optional().default(""),
+});
+
+const dailyHoursSchema = z.object({
+  monday: dayEntrySchema,
+  tuesday: dayEntrySchema,
+  wednesday: dayEntrySchema,
+  thursday: dayEntrySchema,
+  friday: dayEntrySchema,
+  saturday: dayEntrySchema,
+  sunday: dayEntrySchema,
+});
+
 const timesheetSchema = z.object({
   weekStarting: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid date" }),
   projectId: z.number().int(),
   notes: z.string().optional(),
   totalHours: z.string().refine(val => !isNaN(parseFloat(val)), { message: "Total hours must be a number" }),
+  dailyHours: dailyHoursSchema,
+status: z.enum(['draft', 'pending']),
 });
 
 async function getUserIdFromToken(): Promise<number | null> {
@@ -34,7 +52,7 @@ async function getUserIdFromToken(): Promise<number | null> {
     }
 }
 
-// GET handler to fetch timesheets
+// GET: fetch timesheets
 export async function GET() {
     const userId = await getUserIdFromToken();
     if (!userId) {
@@ -78,7 +96,7 @@ export async function GET() {
     }
 }
 
-// POST handler to create a new timesheet
+// POST: create a new timesheet
 export async function POST(request: Request) {
     const userId = await getUserIdFromToken();
     if (!userId) {
@@ -87,13 +105,19 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json();
+        console.log("Received body:", body);
+
         const validation = timesheetSchema.safeParse(body);
 
         if (!validation.success) {
             return NextResponse.json({ message: 'Invalid input', errors: validation.error.flatten().fieldErrors }, { status: 400 });
         }
 
-        const { weekStarting, projectId, totalHours, notes } = validation.data;
+        const { weekStarting, projectId, totalHours, notes, dailyHours, status } = validation.data;
+        
+        console.log("Validated dailyHours:", dailyHours);
+
+        //TODO: Fetch normal rate from projects hourlyRate. Overtime can be left as hardcoded for now!
         
         const normalRate = "20.00"; 
         const overtimeRate = "30.00";
@@ -104,8 +128,8 @@ export async function POST(request: Request) {
             projectId,
             totalHours,
             notes,
-            status: 'draft',
-            dailyHours: {}, 
+            status,
+            dailyHours,
             normalHours: totalHours,
             normalRate: normalRate,
             overtimeHours: "0",

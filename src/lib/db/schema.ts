@@ -1,6 +1,22 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
+// Define a type for our daily hours structure
+export type DayEntry = {
+  start: string;
+  end: string;
+  notes: string;
+};
+
+export type DailyHours = {
+  monday: DayEntry;
+  tuesday: DayEntry;
+  wednesday: DayEntry;
+  thursday: DayEntry;
+  friday: DayEntry;
+  saturday: DayEntry;
+  sunday: DayEntry;
+};
 /** ─── Tables ───────────────────────────────────────────────────────────────── */
 
 export const users = pgTable("users", {
@@ -45,7 +61,10 @@ export const timesheets = pgTable("timesheets", {
   referenceNumber: text("reference_number").notNull().unique(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   weekStarting: timestamp("week_starting").notNull(),
-  dailyHours: jsonb("daily_hours").notNull(),
+  
+  // dailyHours: jsonb("daily_hours").notNull(),
+  dailyHours: jsonb("daily_hours").$type<DailyHours>().notNull(),
+
   totalHours: decimal("total_hours").notNull(),
   status: text("status", { enum: ["draft", "pending", "approved", "rejected", "invoiced"] }).default("draft").notNull(),
   notes: text("notes"),
@@ -142,13 +161,7 @@ export const invoiceTimesheetRelations = relations(invoiceTimesheets, ({ one }) 
     references: [timesheets.id],
   }),
 }));
-// Type for daily hours structure
-export type DailyHours = {
-  [key in 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday']: {
-    start: string;
-    end: string;
-  };
-};
+
 
 
 // // Create insert schemas
