@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
+import type { DailyHours } from '@/lib/db/schema';
 
 interface JwtPayload {
   userId: number;
@@ -115,11 +116,48 @@ export async function POST(request: Request) {
 
         const { weekStarting, projectId, totalHours, notes, dailyHours, status } = validation.data;
         
-        console.log("Validated dailyHours:", dailyHours);
+        // Transform the dailyHours to ensure it matches the DailyHours type
+        const transformedDailyHours: DailyHours = {
+            monday: {
+                start: dailyHours.monday.start,
+                end: dailyHours.monday.end,
+                notes: dailyHours.monday.notes || ""
+            },
+            tuesday: {
+                start: dailyHours.tuesday.start,
+                end: dailyHours.tuesday.end,
+                notes: dailyHours.tuesday.notes || ""
+            },
+            wednesday: {
+                start: dailyHours.wednesday.start,
+                end: dailyHours.wednesday.end,
+                notes: dailyHours.wednesday.notes || ""
+            },
+            thursday: {
+                start: dailyHours.thursday.start,
+                end: dailyHours.thursday.end,
+                notes: dailyHours.thursday.notes || ""
+            },
+            friday: {
+                start: dailyHours.friday.start,
+                end: dailyHours.friday.end,
+                notes: dailyHours.friday.notes || ""
+            },
+            saturday: {
+                start: dailyHours.saturday.start,
+                end: dailyHours.saturday.end,
+                notes: dailyHours.saturday.notes || ""
+            },
+            sunday: {
+                start: dailyHours.sunday.start,
+                end: dailyHours.sunday.end,
+                notes: dailyHours.sunday.notes || ""
+            }
+        };
+        console.log("Transformed daily hours:", transformedDailyHours);
 
         //TODO: Fetch normal rate from projects hourlyRate. Overtime can be left as hardcoded for now!
-        
-        const normalRate = "20.00"; 
+        const normalRate = "20.00";
         const overtimeRate = "30.00";
 
         const newTimesheet = await db.insert(timesheets).values({
@@ -129,7 +167,7 @@ export async function POST(request: Request) {
             totalHours,
             notes,
             status,
-            dailyHours,
+            dailyHours : transformedDailyHours,
             normalHours: totalHours,
             normalRate: normalRate,
             overtimeHours: "0",

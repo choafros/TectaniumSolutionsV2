@@ -3,9 +3,9 @@ import { relations } from "drizzle-orm";
 
 // Define a type for our daily hours structure
 export type DayEntry = {
-  start: string;
-  end: string;
-  notes: string;
+  start?: string;
+  end?: string;
+  notes?: string;
 };
 
 export type DailyHours = {
@@ -71,7 +71,7 @@ export const timesheets = pgTable("timesheets", {
   normalHours: decimal("normal_hours", { precision: 10, scale: 2 }).notNull(),
   normalRate: decimal("normal_rate", { precision: 10, scale: 2 }).notNull(),
   overtimeHours: decimal("overtime_hours", { precision: 10, scale: 2 }).notNull(),
-  overtimeRate: decimal("orvertime_rate", { precision: 10, scale: 2 }).notNull(),
+  overtimeRate: decimal("overtime_rate", { precision: 10, scale: 2 }).notNull(),
   totalCost: decimal("total_cost", { precision: 10, scale: 2}).notNull(),
   projectId: integer("project_id").notNull().references(() => projects.id),
 
