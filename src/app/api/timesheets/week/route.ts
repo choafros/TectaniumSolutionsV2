@@ -32,16 +32,22 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const weekStarting = searchParams.get('date');
+    const projectId = searchParams.get('projectId');
 
     if (!weekStarting) {
         return NextResponse.json({ message: 'Date parameter is required' }, { status: 400 });
+    }
+    
+    if (!projectId) {
+        return NextResponse.json({ message: 'Project ID parameter is required' }, { status: 400 });
     }
 
     try {
         const existingTimesheet = await db.query.timesheets.findFirst({
             where: and(
                 eq(timesheets.userId, userId),
-                eq(timesheets.weekStarting, new Date(weekStarting))
+                eq(timesheets.weekStarting, new Date(weekStarting)),
+                eq(timesheets.projectId, parseInt(projectId, 10)) // base 10
             )
         });
 

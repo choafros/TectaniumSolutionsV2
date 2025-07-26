@@ -13,6 +13,8 @@ import { projects, timesheets as timesheetsSchema, DailyHours, DayEntry } from '
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 
 // Types
 type Project = InferSelectModel<typeof projects>;
@@ -31,6 +33,8 @@ const initialDailyHours: DailyHours = {
   saturday: { ...initialDayEntry, start: '', end: '' },
   sunday: { ...initialDayEntry, start: '', end: '' },
 };
+const daysOfWeek: (keyof DailyHours)[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
 
 function getStartOfWeek(date: Date) {
     const d = new Date(date);
@@ -42,6 +46,7 @@ function getStartOfWeek(date: Date) {
 }
 
 export default function TimesheetsPage() {
+
     const [projects, setProjects] = useState<Project[]>([]);
     const [currentTimesheet, setCurrentTimesheet] = useState<Timesheet | null>(null);
     const [dailyHours, setDailyHours] = useState<DailyHours>(initialDailyHours);
@@ -52,15 +57,26 @@ export default function TimesheetsPage() {
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    const fetchTimesheetForWeek = useCallback(async (date: Date) => {
+    const fetchTimesheetForWeek = useCallback(async (date: Date, projectId: string) => {
         setIsLoading(true);
         setError('');
         try {
+            // If not project is selected, reset the timesheet view
+            if (!projectId && projects.length > 0) {
+                setCurrentTimesheet(null);
+                setDailyHours(JSON.parse(JSON.stringify(initialDailyHours)));
+                setIsLoading(false);
+                setIsDirty(false);
+                return;
+            }
+
             const dateString = date.toISOString().split('T')[0];
-            const res = await fetch(`/api/timesheets/week?date=${dateString}`);
+            const res = await fetch(`/api/timesheets/week?date=${dateString}&projectId=${projectId}`);
+
             if (!res.ok) throw new Error("Failed to load timesheet data.");
 
             const data = await res.json();
+            
             if (data.exists) {
                 setCurrentTimesheet(data.timesheet);
                 setDailyHours(data.timesheet.dailyHours);
@@ -68,7 +84,7 @@ export default function TimesheetsPage() {
             } else {
                 setCurrentTimesheet(null);
                 setDailyHours(JSON.parse(JSON.stringify(initialDailyHours)));
-                setSelectedProjectId(projects.length > 0 ? projects[0].id.toString() : '');
+                // setSelectedProjectId(projects.length > 0 ? projects[0].id.toString() : '');
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -76,7 +92,7 @@ export default function TimesheetsPage() {
             setIsLoading(false);
             setIsDirty(false);
         }
-    }, [projects]);
+    }, []); // [projects]
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -84,6 +100,9 @@ export default function TimesheetsPage() {
             if (res.ok) {
                 const projectData = await res.json();
                 setProjects(projectData);
+                if (projectData.length > 0) {
+                    setSelectedProjectId(projectData[0].id.toString());
+                }
             }
         };
         fetchProjects();
@@ -91,9 +110,9 @@ export default function TimesheetsPage() {
 
     useEffect(() => {
         if (projects.length > 0) {
-            fetchTimesheetForWeek(weekStart);
+            fetchTimesheetForWeek(weekStart, selectedProjectId);
         }
-    }, [weekStart, fetchTimesheetForWeek, projects]);
+    }, [weekStart, selectedProjectId, fetchTimesheetForWeek]);
 
     const handleDayChange = (day: keyof DailyHours, field: keyof DayEntry, value: string) => {
         setDailyHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
@@ -121,10 +140,12 @@ export default function TimesheetsPage() {
 
 
     const handleSave = async (status: 'draft' | 'pending') => {
+
         if (!selectedProjectId) {
             setError("Please select a project.");
             return;
         }
+
         setIsSaving(true);
         setError('');
 
@@ -153,7 +174,7 @@ export default function TimesheetsPage() {
                 throw new Error(data.message || 'Failed to save timesheet');
             }
             
-            await fetchTimesheetForWeek(weekStart);
+            await fetchTimesheetForWeek(weekStart, selectedProjectId);
 
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -173,7 +194,7 @@ export default function TimesheetsPage() {
     const isApproved = currentTimesheet?.status === 'approved';
     const isSubmitted = currentTimesheet?.status === 'pending';
 
-    return (
+        return (
         <div className="grid gap-6">
             <Card>
                 <CardHeader>
@@ -194,27 +215,42 @@ export default function TimesheetsPage() {
                         <fieldset disabled={isApproved || isSubmitted || isSaving} className="space-y-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="project">Project</Label>
-                                <Select value={selectedProjectId} onValueChange={val => { setSelectedProjectId(val); setIsDirty(true); }}>
+                                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
                                     <SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger>
                                     <SelectContent>{projects.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {Object.keys(dailyHours).map(day => (
-                                    <Card key={day} className="p-4 bg-background">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <Label className="capitalize font-semibold">{day}</Label>
-                                            <Button type="button" variant="link" size="sm" className="p-0 h-auto" onClick={() => handleSetDefault(day as keyof DailyHours)}>Set Default</Button>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <Input type="time" value={dailyHours[day as keyof DailyHours].start} onChange={e => handleDayChange(day as keyof DailyHours, 'start', e.target.value)} />
-                                            <Input type="time" value={dailyHours[day as keyof DailyHours].end} onChange={e => handleDayChange(day as keyof DailyHours, 'end', e.target.value)} />
-                                        </div>
-                                        <Textarea placeholder="Notes (optional)..." className="mt-2 text-sm" value={dailyHours[day as keyof DailyHours].notes} onChange={e => handleDayChange(day as keyof DailyHours, 'notes', e.target.value)} />
-                                    </Card>
-                                ))}
-                            </div>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Day</TableHead>
+                                        <TableHead>Start Time</TableHead>
+                                        <TableHead>End Time</TableHead>
+                                        <TableHead>Notes</TableHead>
+                                        <TableHead>Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {daysOfWeek.map(day => (
+                                        <TableRow key={day}>
+                                            <TableCell className="capitalize font-semibold">{day}</TableCell>
+                                            <TableCell>
+                                                <Input type="time" value={dailyHours[day].start} onChange={e => handleDayChange(day, 'start', e.target.value)} />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Input type="time" value={dailyHours[day].end} onChange={e => handleDayChange(day, 'end', e.target.value)} />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Textarea placeholder="Notes..." className="text-sm" value={dailyHours[day].notes} onChange={e => handleDayChange(day, 'notes', e.target.value)} />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Button type="button" variant="link" size="sm" className="p-0 h-auto" onClick={() => handleSetDefault(day)}>Set Default</Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                             
                             <div className="flex justify-between items-center pt-4 border-t flex-wrap gap-4">
                                 <div>
@@ -227,7 +263,7 @@ export default function TimesheetsPage() {
                                             {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
                                             Save Draft
                                         </Button>
-                                        <Button onClick={() => handleSave('pending')} disabled={!isDirty || isSaving}>
+                                        <Button onClick={() => handleSave('pending')} disabled={isSaving}>
                                             {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
                                             Submit
                                         </Button>
