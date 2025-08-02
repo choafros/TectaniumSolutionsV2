@@ -9,6 +9,12 @@ import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 import type { DailyHours } from '@/lib/db/schema';
 
+
+// Types
+import type { InferSelectModel } from "drizzle-orm";
+type Timesheet = InferSelectModel<typeof timesheets>;
+type User = InferSelectModel<typeof users>;
+
 interface JwtPayload {
   userId: number;
 }
@@ -80,7 +86,7 @@ export async function GET(request: Request) {
             userTimesheets = await db.query.timesheets.findMany({
                 with: {
                     project: { columns: { name: true } },
-                    user: { columns: { username: true } } 
+                    user: { columns: { username: true } }
                 },
                 orderBy: (timesheets, { desc }) => [desc(timesheets.weekStarting)],
             });

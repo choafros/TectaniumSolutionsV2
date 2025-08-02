@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/components/auth-provider';
-import { DashboardNav } from '@/components/dashboard-nav'; // The new, reusable navigation component
+import { DashboardNav } from '@/components/dashboard-nav';
 import { Button } from '@/components/ui/button';
 import { LogOut, ShieldCheck } from 'lucide-react';
 
@@ -11,9 +11,9 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
-  return (
+return (
     <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-gray-100/40 lg:block dark:bg-gray-800/40">
         <div className="flex h-full max-h-screen flex-col gap-2">
@@ -24,7 +24,6 @@ export default function DashboardLayout({
             </Link>
           </div>
           <div className="flex-1 overflow-auto py-2">
-            {/* The navigation logic is now neatly contained in this component */}
             <DashboardNav />
           </div>
           <div className="mt-auto p-4 border-t">
@@ -40,7 +39,12 @@ export default function DashboardLayout({
       </div>
       <div className="flex flex-col">
          <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-100/40 px-6 dark:bg-gray-800/40">
-          {/* This header can be customized per-page or made dynamic later */}
+            {/* Welcome message for the logged-in user */}
+            <div className="flex-1">
+                <h1 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Welcome, {user?.username || 'User'}
+                </h1>
+            </div>
         </header>
         <main className="flex-1 p-4 md:p-6">
           {children}

@@ -15,10 +15,13 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-
-// Types
+// Types (Infer)
 type Project = InferSelectModel<typeof projects>;
 type Timesheet = InferSelectModel<typeof timesheetsSchema>;
+type TimesheetWithProject = InferSelectModel<typeof timesheetsSchema> & {
+  project: Project;
+};
+
 
 const DEFAULT_START_TIME = '09:00';
 const DEFAULT_END_TIME = '17:00';
@@ -48,7 +51,7 @@ function getStartOfWeek(date: Date) {
 export default function TimesheetsPage() {
 
     const [projects, setProjects] = useState<Project[]>([]);
-    const [weekTimesheets, setWeekTimesheets] = useState<Timesheet[]>([]);
+    const [weekTimesheets, setWeekTimesheets] = useState<TimesheetWithProject[]>([]);
     const [currentTimesheet, setCurrentTimesheet] = useState<Timesheet | null>(null);
     const [dailyHours, setDailyHours] = useState<DailyHours>(initialDailyHours);
     const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -62,15 +65,6 @@ export default function TimesheetsPage() {
         setIsLoading(true);
         setError('');
         try {
-            // If not project is selected, reset the timesheet view
-            // if (!projectId && projects.length > 0) {
-            //     setCurrentTimesheet(null);
-            //     setDailyHours(JSON.parse(JSON.stringify(initialDailyHours)));
-            //     setIsLoading(false);
-            //     setIsDirty(false);
-            //     return;
-            // }
-
             const dateString = date.toISOString().split('T')[0];
             const res = await fetch(`/api/timesheets?week=${dateString}`);
 
@@ -78,23 +72,14 @@ export default function TimesheetsPage() {
 
             const data = await res.json();
             setWeekTimesheets(data);
-
-            // if (data.exists) {
-            //     setCurrentTimesheet(data.timesheet);
-            //     setDailyHours(data.timesheet.dailyHours);
-            //     setSelectedProjectId(data.timesheet.projectId.toString());
-            // } else {
-            //     setCurrentTimesheet(null);
-            //     setDailyHours(JSON.parse(JSON.stringify(initialDailyHours)));
-            //     // setSelectedProjectId(projects.length > 0 ? projects[0].id.toString() : '');
-            // }
+            
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred');
         } finally {
             setIsLoading(false);
             setIsDirty(false);
         }
-    }, []); // [projects]
+    }, []);
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -202,13 +187,11 @@ export default function TimesheetsPage() {
             return newDate;
         });
     };
+
     const isLocked = currentTimesheet?.status === 'approved' || currentTimesheet?.status === 'pending';
-    const submittedProjectIds = useMemo(() => new Set(weekTimesheets.map(ts => ts.projectId.toString())), [weekTimesheets]);
+    const submittedProjectIds = useMemo(() => new Set(weekTimesheets.filter(ts => ts.status === 'pending' || ts.status === 'approved').map(ts => ts.projectId.toString())), [weekTimesheets]);
 
-    // const isApproved = currentTimesheet?.status === 'approved';
-    // const isSubmitted = currentTimesheet?.status === 'pending';
-
-return (
+    return (
         <div className="grid gap-6">
             <Card>
                 <CardHeader>
@@ -319,7 +302,7 @@ return (
                             ) : weekTimesheets.length > 0 ? (
                                 weekTimesheets.map(ts => (
                                     <TableRow key={ts.id}>
-                                        <TableCell className="font-medium">{ts.projectId}</TableCell>
+                                        <TableCell className="font-medium">{ts.project.name}</TableCell>
                                         <TableCell>{ts.totalHours}</TableCell>
                                         <TableCell><Badge className="capitalize">{ts.status}</Badge></TableCell>
                                     </TableRow>
@@ -332,5 +315,5 @@ return (
                 </CardContent>
             </Card>
         </div>
-    );    
+    );
 }

@@ -1,58 +1,135 @@
 // src/app/dashboard/admin/users/page.tsx
 "use client";
 
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/auth-provider';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { type InferSelectModel } from 'drizzle-orm';
+import { users as usersSchema } from '@/lib/db/schema';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from '@/components/ui/badge';
+import { UserForm } from '@/components/ui/user-form';
+import { BackgroundGradient } from '@/components/ui/background-gradient';
+
+export type User = InferSelectModel<typeof usersSchema>;
 
 export default function AdminUsersPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
-  // Protect the route client-side as an extra layer of security
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/users');
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const data = await res.json();
+      setUsers(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (user && user.role !== 'admin') {
       router.push('/dashboard');
+    } else if (user) { // Only fetch if user is logged in
+      fetchUsers();
     }
-  }, [user, router]);
+  }, [user, router, fetchUsers]);
 
-  // Render a loading/redirecting state while checking the user role
+  const handleEdit = (userToEdit: User) => {
+    setSelectedUser(userToEdit);
+    setIsFormOpen(true);
+  };
+
+  const handleRegister = () => {
+    setSelectedUser(null);
+    setIsFormOpen(true);
+  };
+  
+  const handleFormSuccess = () => {
+    setIsFormOpen(false);
+    fetchUsers();
+  }
+
   if (!user || user.role !== 'admin') {
     return <p>Loading or redirecting...</p>;
   }
 
   return (
     <div className="relative w-full h-full">
-       {/* Subtle background gradient effect */}
-      <div
-        className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
-        aria-hidden="true"
-      >
-        <div
-          className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
-          style={{
-            clipPath:
-              'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
-          }}
-        />
-      </div>
+      <BackgroundGradient
+        from="from-blue-400"
+        to="to-emerald-400"
+        shape="polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"
+      />
       
-      {/* Page content */}
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Manage Users</CardTitle>
-            <CardDescription>
-              Here you can view, edit, and manage all users in the system.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>User management functionality will be built here.</p>
-            {/* You can add a table of users here in the future */}
-          </CardContent>
-        </Card>
-      </div>
+      <UserForm 
+        isOpen={isFormOpen}
+        setIsOpen={setIsFormOpen}
+        user={selectedUser}
+        onSuccess={handleFormSuccess}
+      />
+
+      <Tabs defaultValue="manage">
+        <div className="flex justify-between items-center">
+            <TabsList>
+                <TabsTrigger value="manage">Manage Users</TabsTrigger>
+            </TabsList>
+            <Button onClick={handleRegister}>Register New User</Button>
+        </div>
+        <TabsContent value="manage">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>View, edit, and manage all users in the system.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Normal Rate</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={5} className="text-center">Loading users...</TableCell></TableRow>
+                  ) : (
+                    users.map(u => (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-medium">{u.username}</TableCell>
+                        <TableCell className="capitalize">{u.role}</TableCell>
+                        <TableCell>
+                          <Badge variant={u.active ? 'default' : 'destructive'}>
+                            {u.active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>£{u.normalRate}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(u)}>Edit</Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
