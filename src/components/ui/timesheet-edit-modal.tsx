@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-// import { Badge } from '@/components/ui/badge';
 import { DailyHours, DayEntry } from "@/lib/db/schema";
 import { TimesheetWithRelations } from "@/app/dashboard/admin/timesheets/page";
 import { useEffect, useState, useMemo } from "react";
@@ -27,6 +26,17 @@ const initialDailyHours: DailyHours = {
   saturday: { start: '', end: '', notes: '' },
   sunday: { start: '', end: '', notes: '' },
 };
+
+const orderedDays: (keyof DailyHours)[] = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
+
 
 export function TimesheetEditModal({ isOpen, setIsOpen, timesheet, onUpdate }: TimesheetEditModalProps) {
   const [dailyHours, setDailyHours] = useState<DailyHours>(initialDailyHours);
@@ -100,9 +110,10 @@ export function TimesheetEditModal({ isOpen, setIsOpen, timesheet, onUpdate }: T
 
   if (!timesheet) return null;
 
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[600px] grid-rows-[auto_1fr_auto]">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit Timesheet</DialogTitle>
           <DialogDescription>
@@ -111,11 +122,19 @@ export function TimesheetEditModal({ isOpen, setIsOpen, timesheet, onUpdate }: T
         </DialogHeader>
 
         <div className="grid gap-4 py-4 overflow-y-auto pr-6">
-           {Object.keys(dailyHours).map(day => (
+            {orderedDays.map(day => (
               <div key={day} className="grid grid-cols-[100px_1fr_1fr] items-center gap-4">
                   <Label htmlFor={day} className="text-right capitalize">{day}</Label>
-                  <Input id={`${day}-start`} type="time" value={dailyHours[day as keyof DailyHours].start} onChange={e => handleDayChange(day as keyof DailyHours, 'start', e.target.value)} />
-                  <Input id={`${day}-end`} type="time" value={dailyHours[day as keyof DailyHours].end} onChange={e => handleDayChange(day as keyof DailyHours, 'end', e.target.value)} />
+                  <Input 
+                    id={`${day}-start`} 
+                    type="time" value={dailyHours[day].start} 
+                    onChange={e => handleDayChange(day, 'start', e.target.value)} 
+                  />
+                  <Input 
+                    id={`${day}-end`} 
+                    type="time" 
+                    value={dailyHours[day].end} 
+                    onChange={e => handleDayChange(day, 'end', e.target.value)} />
               </div>
             ))}
             <div className="grid gap-2">

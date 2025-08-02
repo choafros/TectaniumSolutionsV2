@@ -46,10 +46,9 @@ export default function LoginPage() {
   return (
     <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
       <Tabs defaultValue="login" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        {/* <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="login">Log In</TabsTrigger>
-          <TabsTrigger value="register">Sign Up</TabsTrigger>
-        </TabsList>
+        </TabsList> */}
         <TabsContent value="login">
           <Card>
             <CardHeader className="space-y-1">

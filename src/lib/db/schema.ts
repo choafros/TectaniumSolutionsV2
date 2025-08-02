@@ -58,7 +58,7 @@ export const documents = pgTable("documents", {
 
 export const timesheets = pgTable("timesheets", {
   id: serial("id").primaryKey(),
-  referenceNumber: text("reference_number").notNull().unique(),
+  referenceNumber: text("reference_number").unique(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   weekStarting: timestamp("week_starting").notNull(),
   

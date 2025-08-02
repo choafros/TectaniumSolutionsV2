@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/db';
 import { timesheets, users } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -54,11 +54,15 @@ async function getUserIdFromToken(): Promise<number | null> {
 }
 
 // GET: fetch timesheets
-export async function GET() {
+export async function GET(request: Request) {
+
     const userId = await getUserIdFromToken();
     if (!userId) {
         return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const weekStarting = searchParams.get('week');
 
     try {
         const currentUser = await db.query.users.findFirst({
@@ -81,8 +85,13 @@ export async function GET() {
                 orderBy: (timesheets, { desc }) => [desc(timesheets.weekStarting)],
             });
         } else {
-            userTimesheets = await db.query.timesheets.findMany({
-                where: eq(timesheets.userId, userId),
+                userTimesheets = await db.query.timesheets.findMany({
+                where: weekStarting 
+                    ? and(
+                        eq(timesheets.userId, userId),
+                        eq(timesheets.weekStarting, new Date(weekStarting))
+                      )
+                    : eq(timesheets.userId, userId),
                 with: {
                     project: { columns: { name: true } }
                 },
@@ -91,6 +100,7 @@ export async function GET() {
         }
 
         return NextResponse.json(userTimesheets);
+
     } catch (error) {
         console.error('Failed to fetch timesheets:', error);
         return NextResponse.json({ message: 'Failed to fetch timesheets' }, { status: 500 });
@@ -173,8 +183,14 @@ export async function POST(request: Request) {
             overtimeHours: "0",
             overtimeRate: overtimeRate,
             totalCost: (parseFloat(totalHours) * parseFloat(normalRate)).toString(),
-            referenceNumber: `TS-${Date.now()}`
         }).returning();
+        
+        const timesheetId = newTimesheet[0].id;
+        const referenceNumber = `TS-${timesheetId}`;
+
+        await db.update(timesheets)
+            .set({ referenceNumber })
+            .where(eq(timesheets.id, timesheetId));
 
         revalidatePath('/dashboard/timesheets');
         revalidatePath('/dashboard/admin/timesheets');

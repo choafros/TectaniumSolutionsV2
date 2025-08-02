@@ -14,7 +14,6 @@ interface JwtPayload {
 }
 
 async function getAuthPayload(): Promise<JwtPayload | null> {
-    // Await the cookies() function to get the cookie store
     const cookieStore = await cookies();
     const token = cookieStore.get('session')?.value;
     
@@ -40,17 +39,14 @@ export async function PUT(
     context: { params: Promise<{ id: string }> }
 ) {
     const auth = await getAuthPayload();
-    // Only admins can use this powerful update
-    if (!auth || auth.role !== 'admin') {
+    if (!auth) {
         return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    // Await the params promise before using it
     const { id } = await context.params;
     if (!id) {
         return NextResponse.json({ message: 'Timesheet ID is required' }, { status: 400 });
     }
-    // Parse the ID to an integer
     const timesheetId = parseInt(id, 10);
     
     if (isNaN(timesheetId)) {
@@ -67,7 +63,6 @@ export async function PUT(
         }        
         const { dailyHours, notes, totalHours, status } = validation.data;
         
-
         const targetTimesheet = await db.query.timesheets.findFirst({ where: eq(timesheets.id, timesheetId) });
 
         if (!targetTimesheet) {
@@ -76,10 +71,15 @@ export async function PUT(
 
         const isOwner = targetTimesheet.userId === auth.userId;
         const isAdmin = auth.role === 'admin';
-        const isApproved = targetTimesheet.status === 'approved';
-
-        if (!isAdmin && (!isOwner || isApproved)) {
-             return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+        
+        if (!isAdmin && !isOwner) {
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+        }
+        
+        // Allow user to edit if it's rejected
+        // A non-admin user cannot edit a pending or approved timesheet. Admins can.
+        if (!isAdmin && (targetTimesheet.status === 'approved' || targetTimesheet.status === 'pending')) {
+             return NextResponse.json({ message: 'Forbidden: Timesheet is locked.' }, { status: 403 });
         }
         
         const updatedTimesheet = await db.update(timesheets)
@@ -124,9 +124,8 @@ export async function DELETE(
 
         const isOwner = targetTimesheet.userId === auth.userId;
         const isAdmin = auth.role === 'admin';
-        const isApproved = targetTimesheet.status === 'approved';
 
-        if (!isAdmin && (!isOwner || isApproved)) {
+        if (!isAdmin && !isOwner) {
              return NextResponse.json({ message: 'Forbidden: Cannot delete this timesheet' }, { status: 403 });
         }
 

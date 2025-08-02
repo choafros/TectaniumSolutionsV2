@@ -48,6 +48,7 @@ function getStartOfWeek(date: Date) {
 export default function TimesheetsPage() {
 
     const [projects, setProjects] = useState<Project[]>([]);
+    const [weekTimesheets, setWeekTimesheets] = useState<Timesheet[]>([]);
     const [currentTimesheet, setCurrentTimesheet] = useState<Timesheet | null>(null);
     const [dailyHours, setDailyHours] = useState<DailyHours>(initialDailyHours);
     const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -57,35 +58,36 @@ export default function TimesheetsPage() {
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    const fetchTimesheetForWeek = useCallback(async (date: Date, projectId: string) => {
+    const fetchTimesheetsForWeek = useCallback(async (date: Date) => {
         setIsLoading(true);
         setError('');
         try {
             // If not project is selected, reset the timesheet view
-            if (!projectId && projects.length > 0) {
-                setCurrentTimesheet(null);
-                setDailyHours(JSON.parse(JSON.stringify(initialDailyHours)));
-                setIsLoading(false);
-                setIsDirty(false);
-                return;
-            }
+            // if (!projectId && projects.length > 0) {
+            //     setCurrentTimesheet(null);
+            //     setDailyHours(JSON.parse(JSON.stringify(initialDailyHours)));
+            //     setIsLoading(false);
+            //     setIsDirty(false);
+            //     return;
+            // }
 
             const dateString = date.toISOString().split('T')[0];
-            const res = await fetch(`/api/timesheets/week?date=${dateString}&projectId=${projectId}`);
+            const res = await fetch(`/api/timesheets?week=${dateString}`);
 
             if (!res.ok) throw new Error("Failed to load timesheet data.");
 
             const data = await res.json();
-            
-            if (data.exists) {
-                setCurrentTimesheet(data.timesheet);
-                setDailyHours(data.timesheet.dailyHours);
-                setSelectedProjectId(data.timesheet.projectId.toString());
-            } else {
-                setCurrentTimesheet(null);
-                setDailyHours(JSON.parse(JSON.stringify(initialDailyHours)));
-                // setSelectedProjectId(projects.length > 0 ? projects[0].id.toString() : '');
-            }
+            setWeekTimesheets(data);
+
+            // if (data.exists) {
+            //     setCurrentTimesheet(data.timesheet);
+            //     setDailyHours(data.timesheet.dailyHours);
+            //     setSelectedProjectId(data.timesheet.projectId.toString());
+            // } else {
+            //     setCurrentTimesheet(null);
+            //     setDailyHours(JSON.parse(JSON.stringify(initialDailyHours)));
+            //     // setSelectedProjectId(projects.length > 0 ? projects[0].id.toString() : '');
+            // }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred');
         } finally {
@@ -109,10 +111,19 @@ export default function TimesheetsPage() {
     }, []);
 
     useEffect(() => {
-        if (projects.length > 0) {
-            fetchTimesheetForWeek(weekStart, selectedProjectId);
+        fetchTimesheetsForWeek(weekStart);
+
+    }, [weekStart, fetchTimesheetsForWeek]);
+    
+    useEffect(() => {
+        const activeTimesheet = weekTimesheets.find(ts => ts.projectId.toString() === selectedProjectId) || null;
+        setCurrentTimesheet(activeTimesheet);
+        if (activeTimesheet) {
+            setDailyHours(activeTimesheet.dailyHours);
+        } else {
+            setDailyHours(JSON.parse(JSON.stringify(initialDailyHours)));
         }
-    }, [weekStart, selectedProjectId, fetchTimesheetForWeek]);
+    }, [selectedProjectId, weekTimesheets]);
 
     const handleDayChange = (day: keyof DailyHours, field: keyof DayEntry, value: string) => {
         setDailyHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
@@ -149,6 +160,7 @@ export default function TimesheetsPage() {
         setIsSaving(true);
         setError('');
 
+        const isUpdating = !!currentTimesheet;
         const method = currentTimesheet ? 'PUT' : 'POST';
         const url = currentTimesheet ? `/api/timesheets/${currentTimesheet.id}` : '/api/timesheets';
 
@@ -174,7 +186,7 @@ export default function TimesheetsPage() {
                 throw new Error(data.message || 'Failed to save timesheet');
             }
             
-            await fetchTimesheetForWeek(weekStart, selectedProjectId);
+            await fetchTimesheetsForWeek(weekStart);
 
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -190,11 +202,13 @@ export default function TimesheetsPage() {
             return newDate;
         });
     };
-    
-    const isApproved = currentTimesheet?.status === 'approved';
-    const isSubmitted = currentTimesheet?.status === 'pending';
+    const isLocked = currentTimesheet?.status === 'approved' || currentTimesheet?.status === 'pending';
+    const submittedProjectIds = useMemo(() => new Set(weekTimesheets.map(ts => ts.projectId.toString())), [weekTimesheets]);
 
-        return (
+    // const isApproved = currentTimesheet?.status === 'approved';
+    // const isSubmitted = currentTimesheet?.status === 'pending';
+
+return (
         <div className="grid gap-6">
             <Card>
                 <CardHeader>
@@ -211,16 +225,25 @@ export default function TimesheetsPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? <p>Loading...</p> : (
-                        <fieldset disabled={isApproved || isSubmitted || isSaving} className="space-y-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="project">Project</Label>
-                                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                                    <SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger>
-                                    <SelectContent>{projects.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}</SelectContent>
-                                </Select>
-                            </div>
-
+                    <fieldset disabled={isSaving} className="space-y-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="project">Project</Label>
+                            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                                <SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger>
+                                <SelectContent>
+                                    {projects.map(p => (
+                                        <SelectItem 
+                                            key={p.id} 
+                                            value={p.id.toString()}
+                                            disabled={submittedProjectIds.has(p.id.toString()) && p.id.toString() !== selectedProjectId}
+                                        >
+                                            {p.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <fieldset disabled={isLocked || isSaving}>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -235,48 +258,79 @@ export default function TimesheetsPage() {
                                     {daysOfWeek.map(day => (
                                         <TableRow key={day}>
                                             <TableCell className="capitalize font-semibold">{day}</TableCell>
-                                            <TableCell>
-                                                <Input type="time" value={dailyHours[day].start} onChange={e => handleDayChange(day, 'start', e.target.value)} />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input type="time" value={dailyHours[day].end} onChange={e => handleDayChange(day, 'end', e.target.value)} />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Textarea placeholder="Notes..." className="text-sm" value={dailyHours[day].notes} onChange={e => handleDayChange(day, 'notes', e.target.value)} />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Button type="button" variant="link" size="sm" className="p-0 h-auto" onClick={() => handleSetDefault(day)}>Set Default</Button>
-                                            </TableCell>
+                                            <TableCell><Input type="time" value={dailyHours[day].start} onChange={e => handleDayChange(day, 'start', e.target.value)} /></TableCell>
+                                            <TableCell><Input type="time" value={dailyHours[day].end} onChange={e => handleDayChange(day, 'end', e.target.value)} /></TableCell>
+                                            <TableCell><Textarea placeholder="Notes..." className="text-sm" value={dailyHours[day].notes} onChange={e => handleDayChange(day, 'notes', e.target.value)} /></TableCell>
+                                            <TableCell><Button type="button" variant="link" size="sm" className="p-0 h-auto" onClick={() => handleSetDefault(day)}>Set Default</Button></TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
-                            
-                            <div className="flex justify-between items-center pt-4 border-t flex-wrap gap-4">
-                                <div>
-                                    {currentTimesheet && <Badge className="capitalize">{currentTimesheet.status}</Badge>}
-                                    <p className="text-sm font-bold">Total Hours: {totalHours}</p>
-                                </div>
-                                {!isApproved && !isSubmitted && (
-                                    <div className="flex gap-2">
-                                         <Button onClick={() => handleSave('draft')} disabled={!isDirty || isSaving}>
-                                            {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                                            Save Draft
-                                        </Button>
-                                        <Button onClick={() => handleSave('pending')} disabled={isSaving}>
-                                            {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                                            Submit
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                             {isSubmitted && <p className="text-sm text-blue-600">This timesheet has been submitted and is pending approval.</p>}
-                             {isApproved && <p className="text-sm text-green-600">This timesheet has been approved and is locked.</p>}
                         </fieldset>
-                    )}
+                        
+                        <div className="flex justify-between items-center pt-4 border-t flex-wrap gap-4">
+                            <div>
+                                {currentTimesheet && <Badge className="capitalize">{currentTimesheet.status}</Badge>}
+                                <p className="text-sm font-bold">Total Hours: {totalHours}</p>
+                            </div>
+                            {!isLocked && (
+                                <div className="flex gap-2">
+                                     <Button onClick={() => handleSave('draft')} disabled={isSaving}>
+                                        {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                                        Save Draft
+                                    </Button>
+                                    <Button onClick={() => handleSave('pending')} disabled={isSaving}>
+                                        {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                                        Submit
+                                    </Button>
+                                </div>
+                            )}
+                             {currentTimesheet?.status === 'rejected' && (
+                                <Button onClick={() => handleSave('pending')} disabled={isSaving}>
+                                    {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                                    Resubmit
+                                </Button>
+                             )}
+                        </div>
+                         {currentTimesheet?.status === 'pending' && <p className="text-sm text-blue-600">This timesheet has been submitted and is pending approval.</p>}
+                         {currentTimesheet?.status === 'approved' && <p className="text-sm text-green-600">This timesheet has been approved and is locked.</p>}
+                    </fieldset>
                     {error && <p className="text-sm text-red-500 mt-4">{error}</p>}
                 </CardContent>
             </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Weekly Submissions</CardTitle>
+                    <CardDescription>Your timesheets for the week starting {weekStart.toLocaleDateString()}.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Project</TableHead>
+                                <TableHead>Total Hours</TableHead>
+                                <TableHead>Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow><TableCell colSpan={3} className="text-center h-24">Loading...</TableCell></TableRow>
+                            ) : weekTimesheets.length > 0 ? (
+                                weekTimesheets.map(ts => (
+                                    <TableRow key={ts.id}>
+                                        <TableCell className="font-medium">{ts.projectId}</TableCell>
+                                        <TableCell>{ts.totalHours}</TableCell>
+                                        <TableCell><Badge className="capitalize">{ts.status}</Badge></TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow><TableCell colSpan={3} className="text-center h-24">No timesheets submitted for this week.</TableCell></TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
-    );
+    );    
 }
