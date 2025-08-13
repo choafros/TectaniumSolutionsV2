@@ -45,7 +45,7 @@ export default function AdminTimesheetsPage() {
         setIsLoading(true);
         try {
             const [timesheetsRes, usersRes] = await Promise.all([
-                fetch('/api/timesheets'),
+                fetch('/api/admin/timesheets'),
                 fetch('/api/users')
             ]);
             if (!timesheetsRes.ok || !usersRes.ok) throw new Error('Failed to fetch data');
