@@ -27,12 +27,22 @@ async function isAdmin(): Promise<boolean> {
     }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+    request: Request, 
+    context: { params: Promise<{ id: string }> }
+) {    
     if (!(await isAdmin())) {
         return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    const invoiceId = parseInt(params.id, 10);
+    const { id } = await context.params;
+
+    if (!id) {
+        return NextResponse.json({ message: 'Invalid user ID' }, { status: 400 });
+    }
+
+    const invoiceId = parseInt(id, 10);
+
     if (isNaN(invoiceId)) {
         return NextResponse.json({ message: 'Invalid invoice ID' }, { status: 400 });
     }
@@ -55,14 +65,23 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-     if (!(await isAdmin())) {
+export async function DELETE(
+    request: Request, 
+    context: { params: Promise<{ id: string }> }
+) {   if (!(await isAdmin())) {
         return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    const invoiceId = parseInt(params.id, 10);
+    const { id } = await context.params;
+
+    if (!id) {
+        return NextResponse.json({ message: 'Invalid invoice Id' }, { status: 400 });
+    }
+
+    const invoiceId = parseInt(id, 10);
+    
     if (isNaN(invoiceId)) {
-        return NextResponse.json({ message: 'Invalid invoice ID' }, { status: 400 });
+        return NextResponse.json({ message: 'Invalid invoice Id' }, { status: 400 });
     }
 
     try {
