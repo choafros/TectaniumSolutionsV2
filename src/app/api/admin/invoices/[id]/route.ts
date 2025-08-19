@@ -27,6 +27,55 @@ async function isAdmin(): Promise<boolean> {
     }
 }
 
+export async function GET(
+    request: Request, 
+    context: { params: Promise<{ id: string }> }
+) {    
+    if (!(await isAdmin())) {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+    
+    const { id } = await context.params;
+
+    if (!id) {
+        return NextResponse.json({ message: 'Invalid Invoice Id' }, { status: 400 });
+    }
+
+    const invoiceId = parseInt(id, 10);
+
+    if (isNaN(invoiceId)) {
+        return NextResponse.json({ message: 'Invalid invoice ID' }, { status: 400 });
+    }
+
+    try {
+        const invoiceDetails = await db.query.invoices.findFirst({
+            where: eq(invoices.id, invoiceId),
+            with: {
+                user: { columns: { username: true } },
+                invoiceTimesheets: {
+                    with: {
+                        timesheet: {
+                            with: {
+                                project: { columns: { name: true } }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!invoiceDetails) {
+            return NextResponse.json({ message: 'Invoice not found' }, { status: 404 });
+        }
+        console.log('Fetched invoice details:', invoiceDetails);
+        return NextResponse.json(invoiceDetails);
+    } catch (error) {
+        console.error(`Failed to fetch invoice ${invoiceId}:`, error);
+        return NextResponse.json({ message: 'Failed to fetch invoice' }, { status: 500 });
+    }
+}
+
+// PUT request to update invoice status
 export async function PUT(
     request: Request, 
     context: { params: Promise<{ id: string }> }
@@ -38,13 +87,13 @@ export async function PUT(
     const { id } = await context.params;
 
     if (!id) {
-        return NextResponse.json({ message: 'Invalid user ID' }, { status: 400 });
+        return NextResponse.json({ message: 'Invalid Invoice Id' }, { status: 400 });
     }
 
     const invoiceId = parseInt(id, 10);
 
     if (isNaN(invoiceId)) {
-        return NextResponse.json({ message: 'Invalid invoice ID' }, { status: 400 });
+        return NextResponse.json({ message: 'Invalid Invoice Id' }, { status: 400 });
     }
 
     try {

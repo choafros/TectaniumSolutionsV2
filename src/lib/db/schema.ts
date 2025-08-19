@@ -62,7 +62,6 @@ export const timesheets = pgTable("timesheets", {
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   weekStarting: timestamp("week_starting").notNull(),
   
-  // dailyHours: jsonb("daily_hours").notNull(),
   dailyHours: jsonb("daily_hours").$type<DailyHours>().notNull(),
 
   totalHours: decimal("total_hours").notNull(),

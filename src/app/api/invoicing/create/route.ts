@@ -1,7 +1,7 @@
 // src/app/api/invoicing/create/route.ts
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/db';
-import { invoices, timesheets } from '@/lib/db/schema';
+import { invoices, invoiceTimesheets, timesheets } from '@/lib/db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { cookies } from 'next/headers';
@@ -99,18 +99,25 @@ export async function POST(request: Request) {
     const newInvoice = newInvoiceResult[0];
     const invoiceId = newInvoice.id;
 
-    // 4. Update invoice with reference number
+  // 4. Link timesheets to the invoice in the join table
+    const invoiceTimesheetEntries = timesheetIds.map(tsId => ({
+        invoiceId: invoiceId,
+        timesheetId: tsId,
+    }));
+    await db.insert(invoiceTimesheets).values(invoiceTimesheetEntries);
+
+    // 5. Update invoice with reference number
     const referenceNumber = `INV-${invoiceId}`;
     await db.update(invoices)
       .set({ referenceNumber })
       .where(eq(invoices.id, invoiceId));
 
-    // 5. Mark timesheets as invoiced
+    // 6. Mark timesheets as invoiced
     await db.update(timesheets)
       .set({ status: 'invoiced' })
       .where(inArray(timesheets.id, timesheetIds));
 
-    // 6. Return final invoice
+    // 7. Return final invoice
     const finalInvoice = { ...newInvoice, referenceNumber };
     return NextResponse.json(
       { message: 'Invoice created successfully', invoice: finalInvoice },
