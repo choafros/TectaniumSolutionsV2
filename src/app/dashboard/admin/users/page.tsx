@@ -1,7 +1,7 @@
 // src/app/dashboard/admin/users/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { useRouter } from 'next/navigation';
 import { type InferSelectModel } from 'drizzle-orm';
@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
 import { UserForm } from '@/components/ui/user-form';
 import { BackgroundGradient } from '@/components/ui/background-gradient';
+import { Input } from '@/components/ui/input';
 
 export type User = InferSelectModel<typeof usersSchema>;
 
@@ -23,6 +24,7 @@ export default function AdminUsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -41,10 +43,15 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (user && user.role !== 'admin') {
       router.push('/dashboard');
-    } else if (user) { // Only fetch if user is logged in
+    } else {
       fetchUsers();
     }
   }, [user, router, fetchUsers]);
+
+  const filteredUsers = useMemo(() => {
+      if (!searchTerm) return users;
+      return users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [users, searchTerm]);
 
   const handleEdit = (userToEdit: User) => {
     setSelectedUser(userToEdit);
@@ -81,11 +88,19 @@ export default function AdminUsersPage() {
       />
 
       <Tabs defaultValue="manage">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-4">
             <TabsList>
                 <TabsTrigger value="manage">Manage Users</TabsTrigger>
             </TabsList>
-            <Button onClick={handleRegister}>Register New User</Button>
+            <div className="flex items-center gap-4">
+                <Input 
+                    placeholder="Search by username..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-64"
+                />
+                <Button onClick={handleRegister}>Register New User</Button>
+            </div>
         </div>
         <TabsContent value="manage">
           <Card>
@@ -108,7 +123,7 @@ export default function AdminUsersPage() {
                   {isLoading ? (
                     <TableRow><TableCell colSpan={5} className="text-center">Loading users...</TableCell></TableRow>
                   ) : (
-                    users.map(u => (
+                    filteredUsers.map(u => (
                       <TableRow key={u.id}>
                         <TableCell className="font-medium">{u.username}</TableCell>
                         <TableCell className="capitalize">{u.role}</TableCell>

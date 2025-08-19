@@ -31,6 +31,8 @@ export const users = pgTable("users", {
   nino: text("nino").unique(),
   utr: text("utr").unique(),
   userType: text("user_type", { enum: ["sole_trader", "business"] }),
+  crn: text("crn"), // Company Registration Number
+  vatNumber: text("vat_number"), // VAT Number
   phoneNumber: text("phone_number"),
   email: text("email"),
   address: text("address"),

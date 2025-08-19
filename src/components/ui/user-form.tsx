@@ -39,6 +39,8 @@ export function UserForm({ isOpen, setIsOpen, user, onSuccess }: UserFormProps) 
         utr: '',
         userType: 'sole_trader',
         address: '',
+        crn: '',
+        vatNumber: '',
       });
     }
     setPassword('');
@@ -150,6 +152,18 @@ export function UserForm({ isOpen, setIsOpen, user, onSuccess }: UserFormProps) 
                     </SelectContent>
                 </Select>
             </div>
+            {formData.userType === 'business' && (
+                <>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="crn" className="text-right">CRN</Label>
+                        <Input id="crn" value={formData.crn || ''} onChange={(e) => handleChange('crn', e.target.value)} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="vatNumber" className="text-right">VAT Number</Label>
+                        <Input id="vatNumber" value={formData.vatNumber || ''} onChange={(e) => handleChange('vatNumber', e.target.value)} className="col-span-3" />
+                    </div>
+                </>
+            )}
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="normalRate" className="text-right">Normal Rate (£)</Label>
                 <Input id="normalRate" type="number" step="0.01" value={formData.normalRate || ''} onChange={(e) => handleChange('normalRate', e.target.value)} className="col-span-3" />
