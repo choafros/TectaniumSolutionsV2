@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     const userId = searchParams.get('userId');
 
     if (!userId) {
-        return NextResponse.json({ message: 'User ID is required' }, { status: 400 });
+        return NextResponse.json({ message: 'User Id is required' }, { status: 400 });
     }
 
     try {

@@ -45,12 +45,12 @@ export async function PUT(
 
     const { id } = await context.params;
     if (!id) {
-        return NextResponse.json({ message: 'Timesheet ID is required' }, { status: 400 });
+        return NextResponse.json({ message: 'Timesheet Id is required' }, { status: 400 });
     }
     const timesheetId = parseInt(id, 10);
     
     if (isNaN(timesheetId)) {
-        return NextResponse.json({ message: 'Invalid timesheet ID' }, { status: 400 });
+        return NextResponse.json({ message: 'Invalid timesheet Id' }, { status: 400 });
     }
 
     try {

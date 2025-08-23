@@ -62,10 +62,9 @@ export const timesheets = pgTable("timesheets", {
   id: serial("id").primaryKey(),
   referenceNumber: text("reference_number").unique(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  projectId: integer("project_id").notNull().references(() => projects.id),
   weekStarting: timestamp("week_starting").notNull(),
-  
   dailyHours: jsonb("daily_hours").$type<DailyHours>().notNull(),
-
   totalHours: decimal("total_hours").notNull(),
   status: text("status", { enum: ["draft", "pending", "approved", "rejected", "invoiced"] }).default("draft").notNull(),
   notes: text("notes"),
@@ -74,8 +73,6 @@ export const timesheets = pgTable("timesheets", {
   overtimeHours: decimal("overtime_hours", { precision: 10, scale: 2 }).notNull(),
   overtimeRate: decimal("overtime_rate", { precision: 10, scale: 2 }).notNull(),
   totalCost: decimal("total_cost", { precision: 10, scale: 2}).notNull(),
-  projectId: integer("project_id").notNull().references(() => projects.id),
-
 });
 
 export const invoices = pgTable("invoices", {
