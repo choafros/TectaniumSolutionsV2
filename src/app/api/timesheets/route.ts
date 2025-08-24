@@ -198,19 +198,18 @@ export async function POST(request: Request) {
     const normalRateNum = parseFloat(user.normalRate?.toString() ?? "0");
     const overtimeRateNum = parseFloat(user.overtimeRate?.toString() ?? "0");
 
-    // Totals across the week
     let totalNormalHours = 0;
     let totalOvertimeHours = 0;
 
     for (const day of Object.values(transformedDailyHours)) {
-        if (day.start && day.end) {
-            const { normalHours, overtimeHours } = calculateNormalAndOvertime(
-            day.start,
-            day.end
-            );
-            totalNormalHours += parseFloat(normalHours);
-            totalOvertimeHours += parseFloat(overtimeHours);
-        }
+    if (day.start && day.end) {
+        const { normalHours, overtimeHours } = calculateNormalAndOvertime(
+        day.start,
+        day.end
+        );
+        totalNormalHours += normalHours;
+        totalOvertimeHours += overtimeHours;
+    }
     }
         // 💰 Calculate pay
     const normalPay = totalNormalHours * normalRateNum;
@@ -251,27 +250,30 @@ export async function POST(request: Request) {
 
     // helper: calculates normal vs overtime hours based on 09:00–17:00 rule
     function calculateNormalAndOvertime(start: string, end: string) {
-        const [sH, sM] = start.split(":").map(Number);
-        const [eH, eM] = end.split(":").map(Number);
+    const [sH, sM] = start.split(":").map(Number);
+    const [eH, eM] = end.split(":").map(Number);
 
-        const startMin = sH * 60 + sM;
-        const endMin = eH * 60 + eM;
+    const startMin = sH * 60 + sM;
+    const endMin = eH * 60 + eM;
 
-        const normalStartMin = 9 * 60;   // 09:00
-        const normalEndMin   = 17 * 60;  // 17:00
+    const normalStartMin = 9 * 60;   // 09:00
+    const normalEndMin = 17 * 60;    // 17:00
 
-        // overlap with normal working hours
-        const normalOverlap =
-            Math.max(0, Math.min(endMin, normalEndMin) - Math.max(startMin, normalStartMin));
+    // overlap with normal working hours
+    const normalOverlap = Math.max(
+        0,
+        Math.min(endMin, normalEndMin) - Math.max(startMin, normalStartMin)
+    );
 
-        const normalMinutes = normalOverlap;
-        const totalMinutes = endMin - startMin;
-        const overtimeMinutes = totalMinutes - normalMinutes;
+    const normalMinutes = normalOverlap;
+    const totalMinutes = endMin - startMin;
+    const overtimeMinutes = totalMinutes - normalMinutes;
 
-        return {
-            normalHours: (normalMinutes / 60).toFixed(2),
-            overtimeHours: (overtimeMinutes / 60).toFixed(2),
-        };
+    return {
+        normalHours: normalMinutes / 60,   // ✅ return numbers
+        overtimeHours: overtimeMinutes / 60,
+    };
     }
+
 
 }

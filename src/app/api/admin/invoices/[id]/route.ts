@@ -13,6 +13,7 @@ interface JwtPayload {
 
 const updateInvoiceSchema = z.object({
     status: z.enum(['pending', 'paid', 'overdue']),
+    pdfUrl: z.string().url().optional(),
 });
 
 async function isAdmin(): Promise<boolean> {
@@ -51,12 +52,19 @@ export async function GET(
         const invoiceDetails = await db.query.invoices.findFirst({
             where: eq(invoices.id, invoiceId),
             with: {
-                user: { columns: { username: true } },
+                user: { columns: {
+                    id: true,
+                    username: true
+                } 
+            },
                 invoiceTimesheets: {
                     with: {
                         timesheet: {
                             with: {
-                                project: { columns: { name: true } }
+                                project: { columns: { 
+                                        name: true 
+                                    } 
+                                }
                             }
                         }
                     }

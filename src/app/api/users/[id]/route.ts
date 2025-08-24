@@ -23,6 +23,7 @@ const updateUserSchema = z.object({
     nino: z.string().optional().or(z.literal('')).nullable(),
     utr: z.string().optional().or(z.literal('')).nullable(),
     userType: z.enum(['sole_trader', 'business']).optional().nullable(),
+    pdfUrl: z.string().url().optional().nullable(),
 });
 
 async function isAdmin(): Promise<boolean> {
@@ -35,6 +36,38 @@ async function isAdmin(): Promise<boolean> {
         return decoded.role === 'admin';
     } catch (e) {
         return false;
+    }
+}
+
+// GET: to fetch a single user by ID
+export async function GET(
+    request: Request,
+    context: { params: Promise<{ id: string }> }
+) {
+    if (!await isAdmin()) {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    const { id } = await context.params;
+    const userId = parseInt(id, 10);
+
+    if (isNaN(userId)) {
+        return NextResponse.json({ message: 'Invalid user ID' }, { status: 400 });
+    }
+
+    try {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+        });
+
+        if (!user) {
+            return NextResponse.json({ message: 'User not found' }, { status: 404 });
+        }
+
+        return NextResponse.json(user);
+    } catch (error) {
+        console.error(`Failed to fetch user ${userId}:`, error);
+        return NextResponse.json({ message: 'Failed to fetch user' }, { status: 500 });
     }
 }
 

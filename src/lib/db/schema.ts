@@ -36,6 +36,8 @@ export const users = pgTable("users", {
   phoneNumber: text("phone_number"),
   email: text("email"),
   address: text("address"),
+  pdfUrl: text("pdf_url"),
+  notes: text("notes"),
 });
 
 export const companies = pgTable("companies", {
