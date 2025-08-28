@@ -24,6 +24,9 @@ const updateUserSchema = z.object({
     utr: z.string().optional().or(z.literal('')).nullable(),
     userType: z.enum(['sole_trader', 'business']).optional().nullable(),
     pdfUrl: z.string().url().optional().nullable(),
+    crn: z.string().optional().nullable(),
+    vatNumber: z.string().optional().nullable(),
+    paymentFrequency: z.enum(['weekly', 'fortnightly', 'monthly']).optional().nullable(),
 });
 
 async function isAdmin(): Promise<boolean> {

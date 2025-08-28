@@ -38,6 +38,9 @@ export const users = pgTable("users", {
   address: text("address"),
   pdfUrl: text("pdf_url"),
   notes: text("notes"),
+  paymentFrequency: text("payment_frequency", {
+    enum: ["weekly", "fortnightly", "monthly"],
+  }).default("weekly"),
 });
 
 export const companies = pgTable("companies", {

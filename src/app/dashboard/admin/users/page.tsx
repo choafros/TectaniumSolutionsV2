@@ -25,6 +25,7 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -53,9 +54,19 @@ export default function AdminUsersPage() {
       return users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [users, searchTerm]);
 
-  const handleEdit = (userToEdit: User) => {
-    setSelectedUser(userToEdit);
-    setIsFormOpen(true);
+  const handleEdit = async (userToEdit: User) => {
+    setError(null);
+    try {
+      const res = await fetch(`/api/users/${userToEdit.id}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch user details.');
+      }
+      const fullUserData = await res.json();
+      setSelectedUser(fullUserData);
+      setIsFormOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    }
   };
 
   const handleRegister = () => {

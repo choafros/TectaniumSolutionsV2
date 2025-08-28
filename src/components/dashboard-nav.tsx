@@ -14,8 +14,7 @@ const allNavItems = [
   // Admin-specific links
   { name: 'Projects', href: '/dashboard/projects', icon: FolderKanban, roles: ['admin'] },
   { name: 'All Timesheets', href: '/dashboard/admin/timesheets', icon: Clock, roles: ['admin'] },
-  { name: 'All Invoices', href: '/dashboard/admin/invoices', icon: ReceiptPoundSterling, roles: ['admin'] },
-  { name: 'Invoicing', href: '/dashboard/admin/invoicing', icon: File, roles: ['admin'] },
+  { name: 'Invoices', href: '/dashboard/admin/invoices', icon: ReceiptPoundSterling, roles: ['admin'] },
   { name: 'Manage Users', href: '/dashboard/admin/users', icon: Users, roles: ['admin'] },
   // Common link for documents
   { name: 'Documents', href: '/dashboard/documents', icon: FileText, roles: ['admin', 'candidate'] },

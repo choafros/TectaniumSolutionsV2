@@ -62,6 +62,9 @@ export function InvoiceDetailModal({ invoiceId, isOpen, setIsOpen }: InvoiceDeta
                 const userData: User = await userRes.json();
                 
                 const doc = await generateInvoicePDF(invoice, userData);
+                // ✅ Instead of saving, open in new tab
+                const pdfBlobUrl = doc.output("bloburl");
+                window.open(pdfBlobUrl, "_blank");
                 doc.save(`invoice-${invoice.referenceNumber}.pdf`);
             } catch (error) {
                 console.error("Failed to generate PDF:", error);

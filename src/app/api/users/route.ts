@@ -25,6 +25,9 @@ const userSchema = z.object({
     nino: z.string().optional().or(z.literal('')).nullable(),
     utr: z.string().optional().or(z.literal('')).nullable(),
     userType: z.enum(['sole_trader', 'business']).optional().nullable(),
+    crn: z.string().optional().nullable(),
+    vatNumber: z.string().optional().nullable(),
+    paymentFrequency: z.enum(['weekly', 'fortnightly', 'monthly']).optional().nullable(),
 });
 
 async function isAdmin(): Promise<boolean> {
@@ -46,18 +49,9 @@ export async function GET() {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
   try {
-    // FIXED: Instead of fetching all columns with `findMany()`,
-    // we explicitly select only the columns needed by the frontend.
-    // This prevents errors if a column exists in the schema but not the database.
-    const allUsers = await db.select({
-        id: users.id,
-        username: users.username,
-        role: users.role,
-        active: users.active,
-        normalRate: users.normalRate,
-      }).from(users);
+    const allUsers = await db.query.users.findMany();
     
-      return NextResponse.json(allUsers);
+    return NextResponse.json(allUsers);
   } catch (error) {
     console.error('Failed to fetch users:', error);
     return NextResponse.json({ message: 'Failed to fetch users' }, { status: 500 });
