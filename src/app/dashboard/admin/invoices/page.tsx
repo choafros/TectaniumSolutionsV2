@@ -21,6 +21,7 @@ import { InvoiceDetailModal } from '@/components/ui/invoice-detail-modal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from '@/components/ui/separator';
+import { UserSearchCombobox } from '@/components/ui/user-search-combobox';
 
 // Types
 type Invoice = InferSelectModel<typeof invoicesSchema> & { user: { username: string } };
@@ -32,11 +33,11 @@ function ManageInvoices() {
     const { user } = useAuth();
     const router = useRouter();
     const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const [users, setUsers] = useState<User[]>([]);
+    // const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const [selectedUser, setSelectedUser] = useState<string>('all');
+    const [selectedUser, setSelectedUser] = useState<string>();
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [viewingInvoiceId, setViewingInvoiceId] = useState<number | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -55,26 +56,26 @@ function ManageInvoices() {
         }
     }, []);
 
-    const fetchUsers = useCallback(async () => {
-        const res = await fetch('/api/users');
-        if (res.ok) {
-            const allUsers = await res.json();
-            setUsers(allUsers.filter((u: User) => u.role === 'candidate'));
-        }
-    }, []);
+    // const fetchUsers = useCallback(async () => {
+    //     const res = await fetch('/api/users');
+    //     if (res.ok) {
+    //         const allUsers = await res.json();
+    //         setUsers(allUsers.filter((u: User) => u.role === 'candidate'));
+    //     }
+    // }, []);
 
     useEffect(() => {
         if (user && user.role !== 'admin') {
             router.push('/dashboard');
         } else if (user) {
             fetchInvoices();
-            fetchUsers();
+            // fetchUsers();
         }
-    }, [user, router, fetchInvoices, fetchUsers]);
+    }, [user, router, fetchInvoices /*, fetchUsers*/]);
 
     const filteredInvoices = useMemo(() => {
         return invoices.filter(inv => {
-            const userMatch = selectedUser === 'all' || inv.userId.toString() === selectedUser;
+            const userMatch = !selectedUser || selectedUser === '' || inv.userId.toString() === selectedUser;
             const statusMatch = selectedStatus === 'all' || inv.status === selectedStatus;
             return userMatch && statusMatch;
         });
@@ -128,13 +129,8 @@ function ManageInvoices() {
                         <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg items-end">
                             <div className="flex-1 grid gap-1.5">
                                 <Label>Filter by User</Label>
-                                <Select value={selectedUser} onValueChange={setSelectedUser}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Users</SelectItem>
-                                        {users.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.username}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <UserSearchCombobox value={selectedUser ?? ""} onChange={setSelectedUser} />
+
                             </div>
                             <div className="flex-1 grid gap-1.5">
                                 <Label>Filter by Status</Label>
@@ -203,7 +199,7 @@ function ManageInvoices() {
 
 // --- Create Invoice Component (Formerly invoicing/page.tsx) ---
 function CreateInvoice() {
-    const [users, setUsers] = useState<User[]>([]);
+    // const [users, setUsers] = useState<User[]>([]);
     const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
     const [selectedTimesheetIds, setSelectedTimesheetIds] = useState<Set<number>>(new Set());
@@ -215,13 +211,13 @@ function CreateInvoice() {
     const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState('');
 
-    const fetchUsers = useCallback(async () => {
-        const res = await fetch('/api/users');
-        if (res.ok) {
-            const allUsers = await res.json();
-            setUsers(allUsers.filter((u: User) => u.role === 'candidate'));
-        }
-    }, []);
+    // const fetchUsers = useCallback(async () => {
+    //     const res = await fetch('/api/users');
+    //     if (res.ok) {
+    //         const allUsers = await res.json();
+    //         setUsers(allUsers.filter((u: User) => u.role === 'candidate'));
+    //     }
+    // }, []);
 
     const fetchTimesheets = useCallback(async (userId: string) => {
         if (!userId) {
@@ -242,9 +238,9 @@ function CreateInvoice() {
         }
     }, []);
 
-    useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
+    // useEffect(() => {
+    //     fetchUsers();
+    // }, [fetchUsers]);
 
     useEffect(() => {
         fetchTimesheets(selectedUserId);
@@ -312,12 +308,7 @@ function CreateInvoice() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                         <div className="grid gap-1.5">
                             <Label htmlFor="user-select">Select User</Label>
-                            <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                                <SelectTrigger id="user-select"><SelectValue placeholder="Select a user..." /></SelectTrigger>
-                                <SelectContent>
-                                    {users.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.username}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                            <UserSearchCombobox value={selectedUserId} onChange={setSelectedUserId} />
                         </div>
                         <div className="grid gap-1.5">
                             <Label htmlFor="vat-rate">VAT Rate</Label>
@@ -394,7 +385,7 @@ function CreateInvoice() {
                     </div>
                      {error && <p className="text-sm text-red-500 text-center">{error}</p>}
                     <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setSelectedUserId('')}>Cancel</Button>
+                        <Button variant="outline" onClick={() => setSelectedUserId('')}>Clear Selection</Button>
                         <Button onClick={handleGenerateInvoice} disabled={isCreating || selectedTimesheetIds.size === 0}>
                             {isCreating ? 'Generating...' : 'Generate Invoice'}
                         </Button>
