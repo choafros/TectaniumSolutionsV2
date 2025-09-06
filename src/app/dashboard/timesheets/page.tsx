@@ -12,7 +12,6 @@ import { type InferSelectModel } from 'drizzle-orm';
 import { projects, timesheets as timesheetsSchema, DailyHours, DayEntry } from '@/lib/db/schema';
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Types (Infer)

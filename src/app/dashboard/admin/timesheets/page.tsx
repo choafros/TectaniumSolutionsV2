@@ -12,6 +12,7 @@ import { timesheets as timesheetsSchema, users as usersSchema, projects as proje
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from '@/components/ui/label';
 import { TimesheetEditModal } from '@/components/ui/timesheet-edit-modal';
+import { UserSearchCombobox } from '@/components/ui/user-search-combobox';
 
 // Types
 export type TimesheetWithRelations = InferSelectModel<typeof timesheetsSchema> & { user: { username: string }, project: { name: string } };
@@ -29,7 +30,7 @@ function getStartOfWeek(date: Date) {
 
 export default function AdminTimesheetsPage() {
     const [allTimesheets, setAllTimesheets] = useState<TimesheetWithRelations[]>([]);
-    const [users, setUsers] = useState<User[]>([]);
+    // const [users, setUsers] = useState<User[]>([]);
     const [weekStart, setWeekStart] = useState<Date>(getStartOfWeek(new Date()));
     
     // Filter states
@@ -44,15 +45,12 @@ export default function AdminTimesheetsPage() {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const [timesheetsRes, usersRes] = await Promise.all([
-                fetch('/api/admin/timesheets'),
-                fetch('/api/users')
-            ]);
-            if (!timesheetsRes.ok || !usersRes.ok) throw new Error('Failed to fetch data');
+            const timesheetsRes = await fetch('/api/admin/timesheets');
+            if (!timesheetsRes.ok) throw new Error('Failed to fetch data');
             const timesheetsData = await timesheetsRes.json();
-            const usersData = await usersRes.json();
+
             setAllTimesheets(timesheetsData);
-            setUsers(usersData.filter((u: User) => u.role === 'candidate'));
+
         } catch (error) {
             console.error("Fetch error:", error);
         } finally {
@@ -115,13 +113,7 @@ export default function AdminTimesheetsPage() {
                         <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg items-end">
                             <div className="flex-1 grid gap-1.5">
                                 <Label>User</Label>
-                                <Select value={selectedUser} onValueChange={setSelectedUser}>
-                                    <SelectTrigger><SelectValue placeholder="Filter by User..." /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Users</SelectItem>
-                                        {users.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.username}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <UserSearchCombobox value={selectedUser} onChange={setSelectedUser} />
                             </div>
                             <div className="flex-1 grid gap-1.5">
                                 <Label>Status</Label>
