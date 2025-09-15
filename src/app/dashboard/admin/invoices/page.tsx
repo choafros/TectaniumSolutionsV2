@@ -24,7 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { UserSearchCombobox } from '@/components/ui/user-search-combobox';
 
 // Types
-type Invoice = InferSelectModel<typeof invoicesSchema> & { user: { username: string } };
+type Invoice = InferSelectModel<typeof invoicesSchema> & { user: { username: string }, dueDate: string | null};
 type User = InferSelectModel<typeof usersSchema>;
 type Timesheet = InferSelectModel<typeof timesheetsSchema> & { project: Pick<InferSelectModel<typeof projectsSchema>, 'name'> };
 
@@ -154,6 +154,7 @@ function ManageInvoices() {
                                     <TableHead>Amount</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Created At</TableHead>
+                                    <TableHead>Due Date</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -168,6 +169,7 @@ function ManageInvoices() {
                                             <TableCell>£{inv.totalAmount}</TableCell>
                                             <TableCell><Badge variant={inv.status === 'paid' ? 'default' : 'secondary'} className="capitalize">{inv.status}</Badge></TableCell>
                                             <TableCell>{new Date(inv.createdAt!).toLocaleDateString()}</TableCell>
+                                            <TableCell>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A'}</TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>

@@ -1,7 +1,7 @@
 // src/app/api/invoicing/create/route.ts
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/db';
-import { invoices, invoiceTimesheets, timesheets } from '@/lib/db/schema';
+import { invoices, invoiceTimesheets, timesheets, users } from '@/lib/db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { cookies } from 'next/headers';
@@ -48,6 +48,11 @@ export async function POST(request: Request) {
 
     const { userId, timesheetIds, vatRate, cisRate } = validation.data;
 
+    // Fetch the user to get their payment frequency
+    const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+    });
+
     // 1. Fetch and validate timesheets
     const timesheetsToInvoice = await db.query.timesheets.findMany({
       where: and(
@@ -77,11 +82,25 @@ export async function POST(request: Request) {
       (acc, ts) => acc + parseFloat(ts.overtimeHours || '0'),
       0
     );
+
+    // 3. Calculate Due Date
+    const createdAt = new Date();
+    let dueDate = new Date(createdAt);
+    const paymentFrequency = user?.paymentFrequency || 'monthly';
+
+    if (paymentFrequency === 'weekly') {
+      dueDate.setDate(dueDate.getDate() + 7);
+    } else if (paymentFrequency === 'fortnightly') {
+      dueDate.setDate(dueDate.getDate() + 14);
+    } else { // monthly
+      dueDate.setMonth(dueDate.getMonth() + 1);
+    }
+
     const vatAmount = subtotal * (vatRate / 100);
     const cisAmount = subtotal * (cisRate / 100);
     const totalAmount = subtotal + vatAmount - cisAmount;
 
-    // 3. Create the invoice record
+    // 4. Create the invoice record
     const newInvoiceResult = await db.insert(invoices).values({
       userId,
       subtotal: subtotal.toFixed(2),
@@ -94,6 +113,8 @@ export async function POST(request: Request) {
       status: 'pending',
       normalRate: null,
       overtimeRate: null,
+      createdAt: createdAt,
+      dueDate: dueDate,
     }).returning();
 
     const newInvoice = newInvoiceResult[0];

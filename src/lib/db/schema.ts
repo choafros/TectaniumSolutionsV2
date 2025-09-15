@@ -41,6 +41,12 @@ export const users = pgTable("users", {
   paymentFrequency: text("payment_frequency", {
     enum: ["weekly", "fortnightly", "monthly"],
   }).default("weekly"),
+
+   // --- Banking Information ---
+  bankName: text("bank_name"),
+  accountName: text("account_name"),
+  accountNumber: text("account_number"),
+  sortCode: text("sort_code"),
 });
 
 export const companies = pgTable("companies", {
@@ -94,6 +100,7 @@ export const invoices = pgTable("invoices", {
   overtimeRate: decimal("overtime_rate", { precision: 10, scale: 2 }),
   status: text("status", { enum: ["pending", "paid", "overdue"] }).default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
+  dueDate: timestamp("due_date"),
   notes: text("notes"),
 });
 
