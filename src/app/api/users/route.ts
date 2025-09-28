@@ -33,6 +33,10 @@ const safeUserFields = {
   pdfUrl: users.pdfUrl,
   notes: users.notes,
   paymentFrequency: users.paymentFrequency,
+  bankName: users.bankName,
+  accountName: users.accountName,
+  accountNumber: users.accountNumber,
+  sortCode: users.sortCode,
 };
 
 const userSchema = z.object({
@@ -51,6 +55,10 @@ const userSchema = z.object({
     crn: z.string().optional().nullable(),
     vatNumber: z.string().optional().nullable(),
     paymentFrequency: z.enum(['weekly', 'fortnightly', 'monthly']).optional().nullable(),
+    bankName: z.string().optional().nullable(),
+    accountName: z.string().optional().nullable(),
+    accountNumber: z.string().optional().nullable(),
+    sortCode: z.string().optional().nullable(),
 });
 
 async function isAdmin(): Promise<boolean> {

@@ -1,5 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, type InferSelectModel } from "drizzle-orm";
 
 // Define a type for our daily hours structure
 export type DayEntry = {
@@ -48,6 +48,7 @@ export const users = pgTable("users", {
   accountNumber: text("account_number"),
   sortCode: text("sort_code"),
 });
+export type User = InferSelectModel<typeof users>;
 
 export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),

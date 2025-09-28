@@ -3,14 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
-import { Home, Clock, FileText, FolderKanban, Users, File, ReceiptPoundSterling } from 'lucide-react';
+import { Home, Clock, FileText, FolderKanban, User, Users, File, ReceiptPoundSterling } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Define all possible navigation items with the roles that can see them
 const allNavItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['admin', 'candidate', 'client'] },
+
   // Worker-specific timesheet link
   { name: 'My Timesheets', href: '/dashboard/timesheets', icon: Clock, roles: ['candidate'] },
+
   // Admin-specific links
   { name: 'Projects', href: '/dashboard/projects', icon: FolderKanban, roles: ['admin'] },
   { name: 'All Timesheets', href: '/dashboard/admin/timesheets', icon: Clock, roles: ['admin'] },
@@ -18,6 +20,8 @@ const allNavItems = [
   { name: 'Manage Users', href: '/dashboard/admin/users', icon: Users, roles: ['admin'] },
   // Common link for documents
   { name: 'Documents', href: '/dashboard/documents', icon: FileText, roles: ['admin', 'candidate'] },
+  { name: 'My Profile', href: '/dashboard/profile', icon: User, roles: ['candidate'] },
+  
 ];
 
 export function DashboardNav() {

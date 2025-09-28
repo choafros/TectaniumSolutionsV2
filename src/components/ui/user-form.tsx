@@ -44,6 +44,10 @@ export function UserForm({ isOpen, setIsOpen, user, onSuccess }: UserFormProps) 
           crn: '',
           vatNumber: '',
           paymentFrequency: 'weekly',
+          bankName: '',
+          accountName: '',
+          accountNumber: '',
+          sortCode: '',
         });
       }
       setPassword('');
@@ -51,7 +55,7 @@ export function UserForm({ isOpen, setIsOpen, user, onSuccess }: UserFormProps) 
     }
   }, [user, isOpen]);
 
-  const handleChange = (field: keyof User | 'paymentFrequency', value: any) => {
+  const handleChange = (field: keyof User, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -103,7 +107,7 @@ export function UserForm({ isOpen, setIsOpen, user, onSuccess }: UserFormProps) 
             <Separator />
             <div className="grid grid-cols-4 items-center gap-4 mt-4">
               <Label htmlFor="username" className="text-right">Username</Label>
-              <Input id="username" value={formData.username || ''} onChange={(e) => handleChange('username', e.target.value)} className="col-span-3" required />
+              <Input id="username" value={formData.username || ''} onChange={(e) => handleChange('username' as keyof User, e.target.value)} className="col-span-3" required />
             </div>
             {!user && (
               <div className="grid grid-cols-4 items-center gap-4 mt-4">
@@ -125,9 +129,9 @@ export function UserForm({ isOpen, setIsOpen, user, onSuccess }: UserFormProps) 
             </div>
           </div>
 
-          {/* Payment Information Section */}
+          {/* Business & Payment Information Section */}
           <div className="mb-4">
-            <h3 className="text-lg font-semibold mb-2">Payment Information</h3>
+            <h3 className="text-lg font-semibold mb-2">Business & Payment</h3>
             <Separator />
             <div className="grid grid-cols-4 items-center gap-4 mt-4">
               <Label htmlFor="userType" className="text-right">User Type</Label>
@@ -185,10 +189,32 @@ export function UserForm({ isOpen, setIsOpen, user, onSuccess }: UserFormProps) 
               </Select>
             </div>
           </div>
+          
+          {/* Banking Information Section */}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-2">Banking Information</h3>
+            <Separator />
+            <div className="grid grid-cols-4 items-center gap-4 mt-4">
+              <Label htmlFor="bankName" className="text-right">Bank Name</Label>
+              <Input id="bankName" value={formData.bankName || ''} onChange={(e) => handleChange('bankName', e.target.value)} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4 mt-4">
+              <Label htmlFor="accountName" className="text-right">Account Name</Label>
+              <Input id="accountName" value={formData.accountName || ''} onChange={(e) => handleChange('accountName', e.target.value)} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4 mt-4">
+              <Label htmlFor="accountNumber" className="text-right">Account Number</Label>
+              <Input id="accountNumber" value={formData.accountNumber || ''} onChange={(e) => handleChange('accountNumber', e.target.value)} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4 mt-4">
+              <Label htmlFor="sortCode" className="text-right">Sort Code</Label>
+              <Input id="sortCode" value={formData.sortCode || ''} onChange={(e) => handleChange('sortCode', e.target.value)} className="col-span-3" />
+            </div>
+          </div>
 
-          {/* Other Information Section */}
+          {/* Admin Section */}
           <div>
-            <h3 className="text-lg font-semibold mb-2">Other Information</h3>
+            <h3 className="text-lg font-semibold mb-2">Admin Settings</h3>
             <Separator />
             <div className="grid grid-cols-4 items-center gap-4 mt-4">
               <Label htmlFor="role" className="text-right">Role</Label>
