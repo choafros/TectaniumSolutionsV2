@@ -36,7 +36,6 @@ export const users = pgTable("users", {
   phoneNumber: text("phone_number"),
   email: text("email"),
   address: text("address"),
-  pdfUrl: text("pdf_url"),
   notes: text("notes"),
   paymentFrequency: text("payment_frequency", {
     enum: ["weekly", "fortnightly", "monthly"],
@@ -103,6 +102,7 @@ export const invoices = pgTable("invoices", {
   createdAt: timestamp("created_at").defaultNow(),
   dueDate: timestamp("due_date"),
   notes: text("notes"),
+  pdfUrl: text("pdf_url"),
 });
 
 export const projects = pgTable("projects", {

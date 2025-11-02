@@ -117,6 +117,7 @@ function ManageInvoices() {
                 invoiceId={viewingInvoiceId}
                 isOpen={isDetailModalOpen}
                 setIsOpen={setIsDetailModalOpen}
+                onUpdate={fetchInvoices}
             />
             <div className="relative w-full h-full">
                 <BackgroundGradient from="from-green-400" to="to-teal-500" shape="polygon(0% 0%, 75% 0%, 100% 50%, 75% 100%, 0% 100%)" />

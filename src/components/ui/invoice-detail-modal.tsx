@@ -22,12 +22,15 @@ interface InvoiceDetailModalProps {
   invoiceId: number | null;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  onUpdate: () => void; // Callback to refresh the invoices list
 }
 
-export function InvoiceDetailModal({ invoiceId, isOpen, setIsOpen }: InvoiceDetailModalProps) {
+export function InvoiceDetailModal({ invoiceId, isOpen, setIsOpen, onUpdate }: InvoiceDetailModalProps) {
+    
     const [invoice, setInvoice] = useState<InvoiceDetails | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (isOpen && invoiceId) {
@@ -39,6 +42,7 @@ export function InvoiceDetailModal({ invoiceId, isOpen, setIsOpen }: InvoiceDeta
                     const data = await res.json();
                     setInvoice(data);
                 } catch (error) {
+                    setError(error instanceof Error ? error.message : 'An unknown error occurred');
                     console.error(error);
                 } finally {
                     setIsLoading(false);
@@ -48,33 +52,49 @@ export function InvoiceDetailModal({ invoiceId, isOpen, setIsOpen }: InvoiceDeta
         }
     }, [isOpen, invoiceId]);
 
-    const handleGeneratePdf = async () => {
+    const handleGenerateOrViewPdf = async () => {
             if (!invoice) return;
 
+            // If PDF URL already exists, just open it.
+            if (invoice.pdfUrl) {
+                window.open(invoice.pdfUrl, "_blank");
+                return;
+            }
+
+            // Otherwise, generate, upload, and then open.
             setIsGenerating(true);
+            setError('');
             try {
-                // Fetch the full user details required for the invoice PDF
-                const userRes = await fetch(`/api/users/${invoice.user.id}`);
-                if(!userRes.ok) {
-                    const errorData = await userRes.json();
-                    throw new Error(errorData.message || 'Failed to fetch user details for PDF.');
-                }
-                const userData: User = await userRes.json();
                 
-                const doc = await generateInvoicePDF(invoice, userData);
-                // ✅ Instead of saving, open in new tab
-                const pdfBlobUrl = doc.output("bloburl");
-                window.open(pdfBlobUrl, "_blank");
-                doc.save(`invoice-${invoice.referenceNumber}.pdf`);
+                const res = await fetch('/api/invoicing/generate-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ invoiceId: invoice.id }),
+                });
+                    
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || 'Failed to generate PDF.');
+                }
+             
+                const { pdfUrl } = await res.json();
+                if (pdfUrl) {
+                    window.open(pdfUrl, "_blank");
+                    onUpdate(); // Refresh the list to show the URL is now available
+                    setIsOpen(false); // Close modal on success
+                } else {
+                    throw new Error("API did not return a PDF URL.");
+                }
+                
             } catch (error) {
+                setError(error instanceof Error ? error.message : 'Could not generate PDF');
                 console.error("Failed to generate PDF:", error);
-                alert(`Could not generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
             } finally {
                 setIsGenerating(false);
             }
         };
 
-    return (
+         return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
@@ -128,13 +148,15 @@ export function InvoiceDetailModal({ invoiceId, isOpen, setIsOpen }: InvoiceDeta
                         </div>
                     </div>
                 )}
+                 {error && <p className="text-sm text-red-500 px-6 pt-4">{error}</p>}
                 <DialogFooter className="pt-4 border-t">
                     <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
-                    <Button onClick={handleGeneratePdf} disabled={isGenerating}>
-                        {isGenerating ? 'Generating...' : 'Generate PDF'}
+                    <Button onClick={handleGenerateOrViewPdf} disabled={isGenerating || isLoading}>
+                        {isGenerating ? 'Generating...' : invoice?.pdfUrl ? 'View PDF' : 'Generate & View PDF'}
                     </Button>                
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
+
 }

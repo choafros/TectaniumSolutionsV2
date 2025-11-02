@@ -30,7 +30,6 @@ const safeUserFields = {
   vatNumber: users.vatNumber,
   phoneNumber: users.phoneNumber,
   address: users.address,
-  pdfUrl: users.pdfUrl,
   notes: users.notes,
   paymentFrequency: users.paymentFrequency,
   bankName: users.bankName,
