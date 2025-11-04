@@ -16,7 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { BackgroundGradient } from '@/components/ui/background-gradient';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, FileCog, RefreshCw } from 'lucide-react';
+import { FaFilePdf } from "react-icons/fa";
 import { InvoiceDetailModal } from '@/components/ui/invoice-detail-modal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,8 +33,8 @@ type Timesheet = InferSelectModel<typeof timesheetsSchema> & { project: Pick<Inf
 function ManageInvoices() {
     const { user } = useAuth();
     const router = useRouter();
+
     const [invoices, setInvoices] = useState<Invoice[]>([]);
-    // const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -41,6 +42,9 @@ function ManageInvoices() {
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [viewingInvoiceId, setViewingInvoiceId] = useState<number | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    
+    // --- New state for PDF generation ---
+    const [isGeneratingPdfId, setIsGeneratingPdfId] = useState<number | null>(null);
 
     const fetchInvoices = useCallback(async () => {
         setIsLoading(true);
@@ -56,22 +60,13 @@ function ManageInvoices() {
         }
     }, []);
 
-    // const fetchUsers = useCallback(async () => {
-    //     const res = await fetch('/api/users');
-    //     if (res.ok) {
-    //         const allUsers = await res.json();
-    //         setUsers(allUsers.filter((u: User) => u.role === 'candidate'));
-    //     }
-    // }, []);
-
     useEffect(() => {
         if (user && user.role !== 'admin') {
             router.push('/dashboard');
         } else if (user) {
             fetchInvoices();
-            // fetchUsers();
         }
-    }, [user, router, fetchInvoices /*, fetchUsers*/]);
+    }, [user, router, fetchInvoices]);
 
     const filteredInvoices = useMemo(() => {
         return invoices.filter(inv => {
@@ -80,6 +75,34 @@ function ManageInvoices() {
             return userMatch && statusMatch;
         });
     }, [invoices, selectedUser, selectedStatus]);
+
+    // --- New handler for generating PDF from the table ---
+    const handleGeneratePdf = async (invoiceId: number) => {
+        if (isGeneratingPdfId) return; // Prevent multiple clicks
+        
+        setIsGeneratingPdfId(invoiceId);
+        setError('');
+        try {
+            const res = await fetch('/api/invoicing/generate-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ invoiceId }),
+            });
+                
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Failed to generate PDF.');
+            }
+         
+            // PDF was generated successfully, refresh the list
+            fetchInvoices();
+            
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Could not generate PDF');
+        } finally {
+            setIsGeneratingPdfId(null); // Reset loading state
+        }
+    };
     
     const handleUpdateStatus = async (invoiceId: number, status: 'paid' | 'pending') => {
         try {
@@ -172,19 +195,45 @@ function ManageInvoices() {
                                             <TableCell>{new Date(inv.createdAt!).toLocaleDateString()}</TableCell>
                                             <TableCell>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A'}</TableCell>
                                             <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                            <span className="sr-only">Actions</span>
+                                                {/* --- MODIFIED ACTIONS CELL --- */}
+                                                <div className="flex items-center justify-end gap-1">
+                                                    {inv.pdfUrl ? (
+                                                        <Button variant="ghost" size="icon" asChild>
+                                                            <a href={inv.pdfUrl} target="_blank" rel="noopener noreferrer" title="View PDF">
+                                                                <FaFilePdf className="h-4 w-4" />
+                                                                <span className="sr-only">View PDF</span>
+                                                            </a>
                                                         </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => handleViewClick(inv.id)}>View Details</DropdownMenuItem>
-                                                        {inv.status === 'pending' && <DropdownMenuItem onClick={() => handleUpdateStatus(inv.id, 'paid')}>Mark as Paid</DropdownMenuItem>}
-                                                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(inv.id)}>Delete</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                    ) : (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleGeneratePdf(inv.id)}
+                                                            disabled={isGeneratingPdfId === inv.id}
+                                                            title="Generate PDF"
+                                                        >
+                                                            {isGeneratingPdfId === inv.id ? (
+                                                                <RefreshCw className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <FileCog className="h-4 w-4" />
+                                                            )}
+                                                            <span className="sr-only">Generate PDF</span>
+                                                        </Button>
+                                                    )}
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                                <span className="sr-only">Actions</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onClick={() => handleViewClick(inv.id)}>View Details</DropdownMenuItem>
+                                                            {inv.status === 'pending' && <DropdownMenuItem onClick={() => handleUpdateStatus(inv.id, 'paid')}>Mark as Paid</DropdownMenuItem>}
+                                                            <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(inv.id)}>Delete</DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))

@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 import { generateInvoicePDF } from '@/lib/pdfGenerator';
-import { storage } from '@/lib/firebase';
+import { getStorage } from '@/lib/firebase';
 
 interface JwtPayload {
   role: string;
@@ -70,6 +70,7 @@ export async function POST(request: Request) {
     const pdfBuffer = doc.output('arraybuffer');
 
     // 4. Upload to Firebase Storage
+    const storage = getStorage();
     const bucket = storage.bucket();
     const fileName = `invoices/${invoiceDetails.userId}/${invoiceDetails.referenceNumber}.pdf`;
     const file = bucket.file(fileName);
