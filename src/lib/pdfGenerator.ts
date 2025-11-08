@@ -186,7 +186,7 @@ doc.setFont("helvetica", "bold");
 doc.text("Payment Information", 14, finalY - 5); // left aligned title
 
 autoTable(doc, {
-  startY: finalY,
+  startY: Math.max((doc as any).lastAutoTable.finalY, y + 30), // ensures below both left/right blocks
   theme: "grid",
   margin: { left: 14 }, // keep on left side
   tableWidth: 80, // compact

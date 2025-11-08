@@ -9,7 +9,7 @@ interface JwtPayload {
   exp: number;
 }
 
-function isJwtPayload(payload: any): payload is JwtPayload {
+function isJwtPayload(payload: unknown): payload is JwtPayload {
   return (
     typeof payload === 'object' &&
     payload !== null &&

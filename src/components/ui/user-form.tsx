@@ -55,7 +55,7 @@ export function UserForm({ isOpen, setIsOpen, user, onSuccess }: UserFormProps) 
     }
   }, [user, isOpen]);
 
-  const handleChange = (field: keyof User, value: any) => {
+  const handleChange = (field: keyof User, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 

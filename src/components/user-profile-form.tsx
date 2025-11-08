@@ -20,7 +20,7 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
   const [success, setSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleChange = (field: keyof User, value: any) => {
+  const handleChange = (field: keyof User, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
