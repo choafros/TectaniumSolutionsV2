@@ -7,9 +7,6 @@ import { z } from 'zod';
 import { hash } from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
-import { InferSelectModel } from "drizzle-orm";
-
-type User = InferSelectModel<typeof users>;
 
 interface JwtPayload {
   role: string;
@@ -69,6 +66,7 @@ async function isAdmin(): Promise<boolean> {
         const decoded = verify(token, process.env.JWT_SECRET!) as JwtPayload;
         return decoded.role === 'admin';
     } catch (e) {
+        console.error('JWT verification failed:', e);
         return false;
     }
 }

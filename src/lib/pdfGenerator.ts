@@ -18,8 +18,13 @@ type InvoiceDetails = InferSelectModel<typeof invoicesSchema> & {
 // A helper to safely convert string decimals to numbers
 const toNumber = (val: string | null | undefined): number => parseFloat(val || '0');
 
+type jsPDFWithAutoTable = jsPDF & {
+  lastAutoTable: { finalY: number };
+};
+
 export async function generateInvoicePDF(invoice: InvoiceDetails, userData: User) {
-  const doc = new jsPDF();
+  const doc = new jsPDF() as jsPDFWithAutoTable;
+
   const pageWidth = doc.internal.pageSize.getWidth();
 
   // --- Styles ---
@@ -113,7 +118,7 @@ const tableBody = invoice.invoiceTimesheets.map(({ timesheet }) => {
 
 
 autoTable(doc, {
-  startY: Math.max((doc as any).lastAutoTable.finalY, y + 30), // ensures below both left/right blocks
+startY: Math.max(doc.lastAutoTable.finalY, y + 30), // ensures below both left/right blocks
   head: [tableColumns],
   body: tableBody,
   styles: { fontSize: 10 },
@@ -159,7 +164,8 @@ const totalsBody: CellDef[][] = [
   ],
 ];
   autoTable(doc, {
-    startY: (doc as any).lastAutoTable.finalY + 10,
+    // Use the casted doc, no 'any' needed
+    startY: doc.lastAutoTable.finalY + 10,
     theme: "grid",
     margin: { left: pageWidth / 2 }, // right side
     styles: { fontSize: 11, halign: 'right', cellPadding: 2 },
@@ -170,8 +176,8 @@ const totalsBody: CellDef[][] = [
     }
   });
 
-// --- Payment Information (bottom-right) ---
-const finalY = (doc as any).lastAutoTable.finalY + 10; // space after totals
+  // --- Payment Information (bottom-right) ---
+  const finalY = doc.lastAutoTable.finalY + 10; // space after totals
 
 const paymentInfo = [
   ["Payment Reference", invoice.referenceNumber || "Payment Reference"],
@@ -186,7 +192,7 @@ doc.setFont("helvetica", "bold");
 doc.text("Payment Information", 14, finalY - 5); // left aligned title
 
 autoTable(doc, {
-  startY: Math.max((doc as any).lastAutoTable.finalY, y + 30), // ensures below both left/right blocks
+  startY: finalY,
   theme: "grid",
   margin: { left: 14 }, // keep on left side
   tableWidth: 80, // compact

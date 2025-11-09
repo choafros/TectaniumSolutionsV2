@@ -8,25 +8,22 @@ const initializeFirebaseAdmin = () => {
     
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    // Vercel escapes newlines, so we must replace them back
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
     const storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
 
     // Add checks to provide clearer build-time errors
     if (!projectId) {
-      console.error('Firebase admin initialization error: FIREBASE_PROJECT_ID is not defined. Check your Vercel environment variables.');
-      return;
+      throw new Error('Firebase admin initialization error: FIREBASE_PROJECT_ID is not defined. Check your Vercel environment variables.');
     }
     if (!clientEmail) {
-      console.error('Firebase admin initialization error: FIREBASE_CLIENT_EMAIL is not defined. Check your Vercel environment variables.');
-      return;
+      throw new Error('Firebase admin initialization error: FIREBASE_CLIENT_EMAIL is not defined. Check your Vercel environment variables.');
     }
     if (!privateKey) {
-      console.error('Firebase admin initialization error: FIREBASE_PRIVATE_KEY is not defined. Check your Vercel environment variables.');
-      return;
+      throw new Error('Firebase admin initialization error: FIREBASE_PRIVATE_KEY is not defined. Check your Vercel environment variables.');
     }
     if (!storageBucket) {
-      console.error('Firebase admin initialization error: FIREBASE_STORAGE_BUCKET is not defined. Check your Vercel environment variables.');
-      return;
+      throw new Error('Firebase admin initialization error: FIREBASE_STORAGE_BUCKET is not defined. Check your Vercel environment variables.');
     }
 
     try {
@@ -39,25 +36,25 @@ const initializeFirebaseAdmin = () => {
         storageBucket: storageBucket,
       });
       console.log("Firebase Admin initialized.");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Firebase admin initialization error', error);
+      // Re-throw the error so the API route can catch it
+      const message = error instanceof Error ? error.message : 'An unknown error occurred';
+      throw new Error(`Firebase initialization failed: ${message}`);
     }
   }
 };
 
-// Call the initialization function right away
-initializeFirebaseAdmin();
+// DO NOT call initializeFirebaseAdmin() here at the top level.
 
-// Export a function to get storage, not the storage instance itself
-// This ensures admin.apps.length is checked before storage() is called
+// Export a function to get storage
 export const getStorage = () => {
-  if (!admin.apps.length) {
-    // This might be redundant if the above call works, but serves as a safeguard
-    initializeFirebaseAdmin();
-  }
+  // Ensure the app is initialized *before* trying to access storage
+  initializeFirebaseAdmin();
+  
+  // Now it's safe to return the storage service
   return admin.storage();
 };
 
 // Export admin itself for other uses
 export default admin;
-

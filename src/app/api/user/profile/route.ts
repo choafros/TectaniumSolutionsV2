@@ -66,10 +66,11 @@ export async function GET() {
     }
     
     // Omit password before sending
-    const { password, ...safeUser } = user;
+    const { password: _password, ...safeUser } = user;
     return NextResponse.json(safeUser);
 
   } catch (error) {
+    console.error('Error fetching user profile:', error);
     return NextResponse.json({ message: 'Server error' }, { status: 500 });
   }
 }

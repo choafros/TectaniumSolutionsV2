@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
-import { Home, Clock, FileText, FolderKanban, User, Users, File, ReceiptPoundSterling } from 'lucide-react';
+import { Home, Clock, FileText, FolderKanban, User, Users, ReceiptPoundSterling } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Define all possible navigation items with the roles that can see them

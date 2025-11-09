@@ -18,7 +18,8 @@ async function isAdmin(): Promise<boolean> {
     try {
         const decoded = verify(token, process.env.JWT_SECRET!) as JwtPayload;
         return decoded.role === 'admin';
-    } catch (e) {
+    } catch (err) {
+        console.error('JWT verification failed:', err);
         return false;
     }
 }

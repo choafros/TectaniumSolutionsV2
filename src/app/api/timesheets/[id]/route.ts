@@ -22,6 +22,7 @@ async function getAuthPayload(): Promise<JwtPayload | null> {
         const secret = process.env.JWT_SECRET!;
         return verify(token, secret) as JwtPayload;
     } catch (e) {
+        console.error('JWT verification failed:', e);
         return null;
     }
 }
@@ -55,7 +56,7 @@ export async function PUT(
 
     try {
         const body = await request.json();
-        let validation = updateTimesheetSchema.safeParse(body);
+        const validation = updateTimesheetSchema.safeParse(body);
 
         if (!validation.success) {
             console.error("Zod validation failed:", validation.error.flatten());

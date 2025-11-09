@@ -85,7 +85,7 @@ export async function POST(request: Request) {
 
     // 3. Calculate Due Date
     const createdAt = new Date();
-    let dueDate = new Date(createdAt);
+    const dueDate = new Date(createdAt);
     const paymentFrequency = user?.paymentFrequency || 'monthly';
 
     if (paymentFrequency === 'weekly') {

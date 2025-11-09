@@ -20,14 +20,15 @@ async function getAuthPayload(): Promise<JwtPayload | null> {
   try {
     const secret = process.env.JWT_SECRET!;
     return verify(token, secret) as JwtPayload;
-  } catch (e) {
+  } catch (err) {
+    console.error('JWT verification failed:', err);
     return null;
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
-  context: any
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
 ) {
 
   const auth = await getAuthPayload();
@@ -36,7 +37,13 @@ export async function DELETE(
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
-  const projectId = parseInt(context.params.id, 10);
+  const { id } = await context.params;
+  
+  if (!id) {
+    return NextResponse.json({ message: 'Invalid invoice Id' }, { status: 400 });
+  }
+  const projectId = parseInt(id, 10);
+
   if (isNaN(projectId)) {
     return NextResponse.json({ message: 'Invalid project ID' }, { status: 400 });
   }

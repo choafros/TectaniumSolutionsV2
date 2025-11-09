@@ -4,13 +4,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from '@/components/auth-provider';
 
 export default function LoginPage() {
@@ -38,17 +37,9 @@ export default function LoginPage() {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('Registration is not yet implemented.');
-  };
-
   return (
     <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
       <Tabs defaultValue="login" className="w-full">
-        {/* <TabsList className="grid w-full grid-cols-1">
-          <TabsTrigger value="login">Log In</TabsTrigger>
-        </TabsList> */}
         <TabsContent value="login">
           <Card>
             <CardHeader className="space-y-1">

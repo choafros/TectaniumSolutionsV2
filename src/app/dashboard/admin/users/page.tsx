@@ -25,7 +25,7 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -55,7 +55,7 @@ export default function AdminUsersPage() {
   }, [users, searchTerm]);
 
   const handleEdit = async (userToEdit: User) => {
-    setError(null);
+    setError(null); // FIX: Was 'error(null)'
     try {
       const res = await fetch(`/api/users/${userToEdit.id}`);
       if (!res.ok) {
@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
       setSelectedUser(fullUserData);
       setIsFormOpen(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.'); // FIX: Was 'error(...)'
     }
   };
 

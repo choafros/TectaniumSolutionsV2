@@ -22,8 +22,8 @@ type TimesheetWithProject = InferSelectModel<typeof timesheetsSchema> & {
 };
 
 
-const DEFAULT_START_TIME = '09:00';
-const DEFAULT_END_TIME = '17:00';
+const DEFAULT_START_TIME = '08:00';
+const DEFAULT_END_TIME = '16:00';
 
 const initialDayEntry: DayEntry = { start: DEFAULT_START_TIME, end: DEFAULT_END_TIME, notes: '' };
 const initialDailyHours: DailyHours = {
@@ -55,7 +55,7 @@ export default function TimesheetsPage() {
     const [dailyHours, setDailyHours] = useState<DailyHours>(initialDailyHours);
     const [selectedProjectId, setSelectedProjectId] = useState<string>('');
     const [weekStart, setWeekStart] = useState<Date>(getStartOfWeek(new Date()));
-    const [isDirty, setIsDirty] = useState(false);
+    const [_isDirty, setIsDirty] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -144,7 +144,6 @@ export default function TimesheetsPage() {
         setIsSaving(true);
         setError('');
 
-        const isUpdating = !!currentTimesheet;
         const method = currentTimesheet ? 'PUT' : 'POST';
         const url = currentTimesheet ? `/api/timesheets/${currentTimesheet.id}` : '/api/timesheets';
 

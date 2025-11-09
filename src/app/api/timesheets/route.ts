@@ -9,12 +9,6 @@ import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 import type { DailyHours } from '@/lib/db/schema';
 
-
-// Types
-import type { InferSelectModel } from "drizzle-orm";
-type Timesheet = InferSelectModel<typeof timesheets>;
-type User = InferSelectModel<typeof users>;
-
 interface JwtPayload {
 userId: number;
 }
@@ -137,7 +131,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ message: 'Invalid input', errors: validation.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    const { weekStarting, projectId, totalHours, notes, dailyHours, status } = validation.data;
+    const { weekStarting, projectId, notes, dailyHours, status } = validation.data;
 
     // Transform the dailyHours to ensure it matches the DailyHours type
     const transformedDailyHours: DailyHours = {
@@ -179,7 +173,7 @@ export async function POST(request: Request) {
     };
     console.log("Transformed daily hours:", transformedDailyHours);
 
-    // ✅ Fetch user rates from the `users` table
+    // Fetch user rates from the `users` table
     const [user] = await db
       .select({
         normalRate: users.normalRate,
@@ -256,8 +250,8 @@ export async function POST(request: Request) {
     const startMin = sH * 60 + sM;
     const endMin = eH * 60 + eM;
 
-    const normalStartMin = 9 * 60;   // 09:00
-    const normalEndMin = 17 * 60;    // 17:00
+    const normalStartMin = 8 * 60;   // 09:00 ? 8am 
+    const normalEndMin = 16 * 60;    // 17:00 ? to 4pm
 
     // overlap with normal working hours
     const normalOverlap = Math.max(

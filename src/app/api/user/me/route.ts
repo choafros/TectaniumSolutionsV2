@@ -37,6 +37,7 @@ export async function GET() {
 
     return NextResponse.json({ user });
   } catch (error) {
+    console.error('Error fetching user data:', error);
     // This will catch invalid tokens
     return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
   }

@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { useRouter } from 'next/navigation';
 import { type InferSelectModel } from 'drizzle-orm';
-import { invoices as invoicesSchema, users as usersSchema, timesheets as timesheetsSchema, projects as projectsSchema } from '@/lib/db/schema';
+import { invoices as invoicesSchema, timesheets as timesheetsSchema, projects as projectsSchema } from '@/lib/db/schema';
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,6 @@ import { UserSearchCombobox } from '@/components/ui/user-search-combobox';
 
 // Types
 type Invoice = InferSelectModel<typeof invoicesSchema> & { user: { username: string }, dueDate: string | null};
-type User = InferSelectModel<typeof usersSchema>;
 type Timesheet = InferSelectModel<typeof timesheetsSchema> & { project: Pick<InferSelectModel<typeof projectsSchema>, 'name'> };
 
 // --- Manage Invoices Component (Formerly the whole page) ---

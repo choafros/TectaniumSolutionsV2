@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { type InferSelectModel } from 'drizzle-orm';
 import { invoices as invoicesSchema, users as usersSchema, timesheets as timesheetsSchema, projects as projectsSchema } from '@/lib/db/schema';
-import { generateInvoicePDF } from '@/lib/pdfGenerator';
 
 type Timesheet = InferSelectModel<typeof timesheetsSchema> & { project: Pick<InferSelectModel<typeof projectsSchema>, 'name'> };
 type InvoiceDetails = InferSelectModel<typeof invoicesSchema> & { 
