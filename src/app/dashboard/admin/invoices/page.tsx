@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from '@/components/ui/separator';
 import { UserSearchCombobox } from '@/components/ui/user-search-combobox';
+import { formatHoursAndMinutes } from '@/lib/utils';
 
 // Types
 type Invoice = InferSelectModel<typeof invoicesSchema> & { user: { username: string }, dueDate: string | null};
@@ -402,8 +403,8 @@ function CreateInvoice() {
                                                 <Label htmlFor={`ts-${ts.id}`} className="font-bold">{ts.referenceNumber} - Week of {new Date(ts.weekStarting).toLocaleDateString()}</Label>
                                                 <p className="text-muted-foreground">Project: {ts.project.name}</p>
                                                 <div className="flex gap-4 text-xs">
-                                                    <span>Normal: {ts.normalHours}h @ £{ts.normalRate}</span>
-                                                    <span>Overtime: {ts.overtimeHours}h @ £{ts.overtimeRate}</span>
+                                                    <span>Normal: {formatHoursAndMinutes(ts.normalHours)} @ £{ts.normalRate}</span>
+                                                    <span>Overtime: {formatHoursAndMinutes(ts.overtimeHours)} @ £{ts.overtimeRate}</span>
                                                     <span className="font-semibold">Total: £{ts.totalCost}</span>
                                                 </div>
                                             </div>

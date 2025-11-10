@@ -13,6 +13,7 @@ import { projects, timesheets as timesheetsSchema, DailyHours, DayEntry } from '
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatHoursAndMinutes } from "@/lib/utils";
 
 // Types (Infer)
 type Project = InferSelectModel<typeof projects>;
@@ -133,7 +134,6 @@ export default function TimesheetsPage() {
         }, 0).toFixed(2);
     }, [dailyHours]);
 
-
     const handleSave = async (status: 'draft' | 'pending') => {
 
         if (!selectedProjectId) {
@@ -252,7 +252,7 @@ export default function TimesheetsPage() {
                         <div className="flex justify-between items-center pt-4 border-t flex-wrap gap-4">
                             <div>
                                 {currentTimesheet && <Badge className="capitalize">{currentTimesheet.status}</Badge>}
-                                <p className="text-sm font-bold">Total Hours: {totalHours}</p>
+                                <p className="text-sm font-bold">Total Hours: {formatHoursAndMinutes(totalHours)}</p>
                             </div>
                             {!isLocked && (
                                 <div className="flex gap-2">
@@ -301,7 +301,7 @@ export default function TimesheetsPage() {
                                 weekTimesheets.map(ts => (
                                     <TableRow key={ts.id}>
                                         <TableCell className="font-medium">{ts.project.name}</TableCell>
-                                        <TableCell>{ts.totalHours}</TableCell>
+                                        <TableCell>{formatHoursAndMinutes(ts.totalHours)}</TableCell>
                                         <TableCell><Badge className="capitalize">{ts.status}</Badge></TableCell>
                                     </TableRow>
                                 ))

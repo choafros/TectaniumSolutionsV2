@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { type InferSelectModel } from 'drizzle-orm';
 import { invoices as invoicesSchema, users as usersSchema, timesheets as timesheetsSchema, projects as projectsSchema } from '@/lib/db/schema';
+import { formatHoursAndMinutes } from '@/lib/utils';
 
 type Timesheet = InferSelectModel<typeof timesheetsSchema> & { project: Pick<InferSelectModel<typeof projectsSchema>, 'name'> };
 type InvoiceDetails = InferSelectModel<typeof invoicesSchema> & { 
@@ -121,8 +122,8 @@ export function InvoiceDetailModal({ invoiceId, isOpen, setIsOpen, onUpdate }: I
                                             <TableCell className="font-mono text-xs">{timesheet.referenceNumber}</TableCell>
                                             <TableCell>{timesheet.project.name}</TableCell>
                                             <TableCell>{new Date(timesheet.weekStarting).toLocaleDateString()}</TableCell>
-                                            <TableCell>{timesheet.normalHours}h @ £{timesheet.normalRate}</TableCell>
-                                            <TableCell>{timesheet.overtimeHours}h @ £{timesheet.overtimeRate}</TableCell>
+                                            <TableCell>{formatHoursAndMinutes(timesheet.normalHours)}h @ £{timesheet.normalRate}</TableCell>
+                                            <TableCell>{formatHoursAndMinutes(timesheet.overtimeHours)}h @ £{timesheet.overtimeRate}</TableCell>
                                             <TableCell className="text-right">£{timesheet.totalCost}</TableCell>
                                         </TableRow>
                                     ))}

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatHoursAndMinutes } from "@/lib/utils";
 
 // Define the type for a project based on your schema
 interface Project {
@@ -163,7 +164,7 @@ export default function ProjectsPage() {
                                     <tr key={p.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
                                         <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{p.name}</td>
                                         <td className="px-6 py-4">{p.location}</td>
-                                        <td className="px-6 py-4">{p.totalHours}</td>
+                                        <td className="px-6 py-4">{formatHoursAndMinutes(p.totalHours)}</td>
                                         <td className="px-6 py-4">
                                             <Button
                                                 variant="destructive"

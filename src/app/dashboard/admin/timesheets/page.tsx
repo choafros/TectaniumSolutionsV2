@@ -16,6 +16,8 @@ import { UserSearchCombobox } from "@/components/ui/user-search-combobox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { formatHoursAndMinutes } from "@/lib/utils";
+
 
 // Types
 export type TimesheetWithRelations = InferSelectModel<typeof timesheetsSchema> & {
@@ -202,7 +204,7 @@ export default function AdminTimesheetsPage() {
                         <TableCell className="font-mono text-xs">{ts.referenceNumber}</TableCell>
                         <TableCell className="font-medium">{ts.user.username}</TableCell>
                         <TableCell>{ts.project.name}</TableCell>
-                        <TableCell>{ts.totalHours}</TableCell>
+                        <TableCell>{formatHoursAndMinutes(ts.totalHours)}</TableCell>
                         <TableCell>
                           <Badge variant={getStatusVariant(ts.status)} className="capitalize">
                             {ts.status}

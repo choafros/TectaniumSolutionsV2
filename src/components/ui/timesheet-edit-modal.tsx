@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DailyHours, DayEntry } from "@/lib/db/schema";
 import { TimesheetWithRelations } from "@/app/dashboard/admin/timesheets/page";
 import { useEffect, useState, useMemo } from "react";
+import { formatHoursAndMinutes } from "@/lib/utils";
 
 interface TimesheetEditModalProps {
   isOpen: boolean;
@@ -50,7 +51,8 @@ export function TimesheetEditModal({ isOpen, setIsOpen, timesheet, onUpdate }: T
     }
   }, [timesheet]);
 
-  const totalHours = useMemo(() => {
+  // Calculate as a number first
+  const totalHoursDecimal = useMemo(() => {
       return Object.values(dailyHours).reduce((acc, day) => {
           if (day.start && day.end) {
               const start = new Date(`1970-01-01T${day.start}:00`);
@@ -61,8 +63,11 @@ export function TimesheetEditModal({ isOpen, setIsOpen, timesheet, onUpdate }: T
               }
           }
           return acc;
-      }, 0).toFixed(2);
+      }, 0);
   }, [dailyHours]);
+
+  // Create a string for saving (decimal)
+  const totalHoursForSave = totalHoursDecimal.toFixed(2);
 
   const handleDayChange = (day: keyof DailyHours, field: keyof DayEntry, value: string) => {
     setDailyHours(prev => ({
@@ -83,7 +88,7 @@ export function TimesheetEditModal({ isOpen, setIsOpen, timesheet, onUpdate }: T
       body = {
         dailyHours,
         notes,
-        totalHours,
+        totalHours: totalHoursForSave, // Use the decimal string for saving
         status: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : timesheet.status,
       };
     }
@@ -141,7 +146,7 @@ export function TimesheetEditModal({ isOpen, setIsOpen, timesheet, onUpdate }: T
               <Label>Main Notes</Label>
               <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
-             <div className="text-right font-bold">Total Hours: {totalHours}</div>
+             <div className="text-right font-bold">Total Hours: {formatHoursAndMinutes(totalHoursDecimal)}</div>
         </div>
 
         <DialogFooter className="flex-wrap">

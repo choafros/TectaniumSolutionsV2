@@ -34,6 +34,42 @@ const updateTimesheetSchema = z.object({
     status: z.enum(["draft", "pending", "approved", "rejected", "invoiced"]),
 });
 
+// This function calculates normal vs overtime hours based on 09:00–17:00 rule
+// We use 9:00 (540 mins) and 17:00 (1020 mins) as the standard day
+function calculateNormalAndOvertime(start: string, end: string) {
+    if (!start || !end) {
+        return { normalHours: 0, overtimeHours: 0 };
+    }
+    
+    const [sH, sM] = start.split(":").map(Number);
+    const [eH, eM] = end.split(":").map(Number);
+
+    const startMin = sH * 60 + sM;
+    const endMin = eH * 60 + eM;
+
+    if (endMin <= startMin) {
+        return { normalHours: 0, overtimeHours: 0 };
+    }
+
+    const normalStartMin = 8 * 60;   // 08:00
+    const normalEndMin = 16 * 60;    // 16:00
+
+    // Calculate overlap with normal working hours
+    const normalOverlap = Math.max(
+        0,
+        Math.min(endMin, normalEndMin) - Math.max(startMin, normalStartMin)
+    );
+
+    const normalMinutes = normalOverlap;
+    const totalMinutes = endMin - startMin;
+    const overtimeMinutes = totalMinutes - normalMinutes;
+
+    return {
+        normalHours: normalMinutes / 60,
+        overtimeHours: overtimeMinutes / 60,
+    };
+}
+
 // PUT: update a timesheet
 export async function PUT(
     request: Request, 
@@ -82,9 +118,39 @@ export async function PUT(
         if (!isAdmin && (targetTimesheet.status === 'approved' || targetTimesheet.status === 'pending')) {
              return NextResponse.json({ message: 'Forbidden: Timesheet is locked.' }, { status: 403 });
         }
+        // Get rates from the timesheet itself (they are snapshotted for history)
+        const normalRateNum = parseFloat(targetTimesheet.normalRate?.toString() ?? "0");
+        const overtimeRateNum = parseFloat(targetTimesheet.overtimeRate?.toString() ?? "0");
+
+        let totalNormalHours = 0;
+        let totalOvertimeHours = 0;
+
+        // Recalculate hours from the *new* dailyHours submitted in the body
+        for (const day of Object.values(dailyHours)) {
+            // The dailyHours object is { monday: { start: '...', end: '...' }, ... }
+            const { start, end } = day as { start?: string; end?: string };
+            if (start && end) {
+                const { normalHours, overtimeHours } = calculateNormalAndOvertime(start, end);
+                totalNormalHours += normalHours;
+                totalOvertimeHours += overtimeHours;
+            }
+        }
+
+        // Recalculate final cost
+        const normalPay = totalNormalHours * normalRateNum;
+        const overtimePay = totalOvertimeHours * overtimeRateNum;
+        const totalCost = normalPay + overtimePay;
         
         const updatedTimesheet = await db.update(timesheets)
-            .set({ status, dailyHours, notes, totalHours })
+            .set({ 
+                status, 
+                dailyHours,
+                notes,
+                totalHours,
+                // Save the recalculated values
+                normalHours: totalNormalHours.toFixed(2),
+                overtimeHours: totalOvertimeHours.toFixed(2),
+                totalCost: totalCost.toFixed(2) })
             .where(eq(timesheets.id, timesheetId))
             .returning();
 

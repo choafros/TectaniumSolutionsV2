@@ -2,8 +2,8 @@
 import jsPDF from 'jspdf';
 import { CellDef, autoTable } from 'jspdf-autotable';
 import { type InferSelectModel } from 'drizzle-orm';
-
 import { users as usersSchema, timesheets as timesheetsSchema, projects as projectsSchema, invoices as invoicesSchema } from '@/lib/db/schema';
+import { formatHoursAndMinutes } from "@/lib/utils";
 
 // Correctly infer the User type from your schema export
 type User = InferSelectModel<typeof usersSchema>;
@@ -110,8 +110,8 @@ const tableBody = invoice.invoiceTimesheets.map(({ timesheet }) => {
     `${timesheet.referenceNumber}\nProject: ${timesheet.project.name}\nWeek of: ${new Date(
       timesheet.weekStarting
     ).toLocaleDateString()}`,
-    `${timesheet.normalHours}h @ £${timesheet.normalRate}`,
-    `${timesheet.overtimeHours}h @ £${timesheet.overtimeRate}`,
+    `${formatHoursAndMinutes(timesheet.normalHours)} @ £${timesheet.normalRate}`,
+    `${formatHoursAndMinutes(timesheet.overtimeHours)} @ £${timesheet.overtimeRate}`,
     `£${(normalCost + overtimeCost).toFixed(2)}`,
   ];
 });
