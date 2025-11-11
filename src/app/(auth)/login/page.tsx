@@ -13,8 +13,8 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from '@/components/auth-provider';
 
 export default function LoginPage() {
-  const [loginUsername, setLoginUsername] = useState('admin');
-  const [loginPassword, setLoginPassword] = useState('admin');
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
   const { checkAuth } = useAuth(); // Get the checkAuth function
@@ -50,7 +50,7 @@ export default function LoginPage() {
               <form onSubmit={handleLogin} className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="login-username">Username</Label>
-                  <Input id="login-username" type="text" placeholder="admin" value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} required />
+                  <Input id="login-username" type="text" value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="login-password">Password</Label>

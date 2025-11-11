@@ -40,3 +40,4 @@ next-env.d.ts
 
 package-lock.json
 yarn.lock
+tectanium-solutions-v2/scripts/update-password.ts
